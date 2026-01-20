@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/src/helpers/axios";
 import Table from "../common/table";
 import Image from "next/image";
@@ -13,6 +13,7 @@ import EmptyState from "../common/emptyState";
 import Checkbox from "../common/checkBox";
 import { PlaylistEntity } from "@/types/types";
 import CreatePlaylist from "./components/createPlaylist";
+import PopupConfirm from "../common/popupConfirm";
 
 const Playlist = () => {
   const [createPlaylistOpen, setCreatePlaylistOpen] = useState(false);
@@ -36,10 +37,21 @@ const Playlist = () => {
         .get("/playlist", { params })
         .then((res) => res.data.playlists),
   });
+  const initialConfirmState = { open: false, id: null };
+  const [confirmOpen, setConfirmOpen] = useState(initialConfirmState);
+  const queryClient = useQueryClient();
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: (id: number) => axiosInstance.delete(`/playlist/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["playlist"], exact: true });
+
+      setConfirmOpen(initialConfirmState);
+    },
+  });
 
   const [checkedItems, setCheckedItems] = useState<number[]>([]);
-  const [editPlaylist, setEditPlaylist] =
-    useState<PlaylistEntity | null>(null);
+  const [editPlaylist, setEditPlaylist] = useState<PlaylistEntity | null>(null);
 
   const router = useRouter();
   const columns = [
@@ -138,7 +150,7 @@ const Playlist = () => {
               },
               {
                 label: "Delete",
-                onClick: () => {},
+                onClick: () => setConfirmOpen({ open: true, id: item.id }),
               },
             ]}
           />
@@ -171,6 +183,17 @@ const Playlist = () => {
         onClose={() => setEditPlaylist(null)}
         playlist={editPlaylist}
       />
+        {
+          confirmOpen.id && <PopupConfirm
+              open={confirmOpen.open}
+              onClose={() => setConfirmOpen(initialConfirmState)}
+              onConfirm={() => mutate(confirmOpen?.id || 0)}
+              title="Delete Playlists"
+              message="Are you sure you want to delete this Playlists?"
+              confirmText="Delete"
+              loading={isPending}
+            />
+        }
     </section>
   );
 };
