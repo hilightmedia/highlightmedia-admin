@@ -15,6 +15,8 @@ import Image from "next/image";
 import Checkbox from "../../common/checkBox";
 import Button from "../../common/button";
 import { Input } from "../../common/input";
+import { format } from "node:path";
+import { formatSeconds } from "@/src/lib/util";
 
 type PlaylistRow = {
   id: number;
@@ -22,12 +24,13 @@ type PlaylistRow = {
   playlistSize: number;
   totalItems: number;
   durationSec: number;
+  thumbnail?: string;
 };
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  playlistId: number; // destination playlist id
+  playlistId: number;
   defaultDurationSec?: number;
   onAdded?: () => void;
 };
@@ -58,11 +61,16 @@ export default function AddSubPlaylistsToPlaylistDialog({
         .then((res) => (res.data.playlists ?? []) as PlaylistRow[]),
   });
 
+  const byId = React.useMemo(() => {
+    const m = new Map<number, PlaylistRow>();
+    for (const p of playlists) m.set(p.id, p);
+    return m;
+  }, [playlists]);
+
   const filtered = React.useMemo(() => {
     const s = search.trim().toLowerCase();
     let list = playlists;
 
-    // prevent selecting the same playlist as a subplaylist (self-reference)
     list = list.filter((p) => p.id !== playlistId);
 
     if (!s) return list;
@@ -80,13 +88,19 @@ export default function AddSubPlaylistsToPlaylistDialog({
     });
   };
 
+  const getDurationForSubPlaylist = (id: number) => {
+    const p = byId.get(id);
+    const d = Number(p?.durationSec ?? 0);
+    return Number.isFinite(d) && d > 0 ? Math.floor(d) : defaultDurationSec;
+  };
+
   const { mutate, isPending } = useMutation({
     mutationFn: (subIds: number[]) =>
       axiosInstance.post(`/playlist/${playlistId}/bulk-add-sub-playlists`, {
         playlistId,
         items: subIds.map((id) => ({
           subPlaylistId: id,
-          duration: defaultDurationSec,
+          duration: getDurationForSubPlaylist(id),
         })),
       }),
     onSuccess: () => {
@@ -121,24 +135,24 @@ export default function AddSubPlaylistsToPlaylistDialog({
         />
       ),
     },
-       {
-          header: "Thumbnail",
-          key: "thumbnail",
-          render: (item: any) =>
-            item.thumbnail ? (
-              <Image
-                src={item.thumbnail}
-                alt={item.name}
-                width={500}
-                height={500}
-                className="rounded-lg h-[50px] w-[70px] object-cover"
-              />
-            ) : (
-              <div className="bg-gray-200 rounded-lg h-[50px] w-[70px] flex items-center justify-center text-gray-500">
-                N/A
-              </div>
-            ),
-        },
+    {
+      header: "Thumbnail",
+      key: "thumbnail",
+      render: (item: any) =>
+        item.thumbnail ? (
+          <Image
+            src={item.thumbnail}
+            alt={item.name}
+            width={500}
+            height={500}
+            className="rounded-lg h-[50px] w-[70px] object-cover"
+          />
+        ) : (
+          <div className="bg-gray-200 rounded-lg h-[50px] w-[70px] flex items-center justify-center text-gray-500">
+            N/A
+          </div>
+        ),
+    },
     {
       header: "SubPlaylist Name",
       key: "name",
@@ -162,20 +176,16 @@ export default function AddSubPlaylistsToPlaylistDialog({
       key: "playlistSize",
       render: (item: PlaylistRow) => (
         <div className="flex flex-col">
-          <span className="font-medium text-gray-7">
-            {item.playlistSize} MB
-          </span>
+          <span className="font-medium text-gray-7">{item.playlistSize} MB</span>
         </div>
       ),
     },
-        {
+    {
       header: "Duration (sec)",
       key: "durationSec",
       render: (item: PlaylistRow) => (
         <div className="flex flex-col">
-          <span className="font-medium text-gray-7">
-            {item.durationSec}
-          </span>
+          <span className="font-medium text-gray-7">{formatSeconds(item.durationSec)}</span>
         </div>
       ),
     },
@@ -218,9 +228,7 @@ export default function AddSubPlaylistsToPlaylistDialog({
         <div className="flex items-center justify-between gap-3">
           <div className="text-sm text-gray-600">
             Selected:{" "}
-            <span className="font-medium text-gray-900">
-              {checkedIds.length}
-            </span>
+            <span className="font-medium text-gray-900">{checkedIds.length}</span>
           </div>
 
           <div className="flex gap-3">

@@ -13,6 +13,7 @@ import useDebounce from "@/src/hooks/useDebounce";
 import Checkbox  from "../common/checkBox";
 import EmptyState from "../common/emptyState";
 import PopupConfirm from "../common/popupConfirm";
+import { formatBytes } from "@/src/lib/util";
 
 const Folder = () => {
   const queryClient = useQueryClient();
@@ -120,7 +121,7 @@ const Folder = () => {
       header: "File Size",
       key: "items",
       render: (item: any) => (
-        <span>{(Number(item.folderSize) || 0).toFixed(2)} MB</span>
+        <span>{formatBytes(item.folderSize)}</span>
       ),
     },
     {

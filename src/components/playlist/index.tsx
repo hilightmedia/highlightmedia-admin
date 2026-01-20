@@ -4,13 +4,15 @@ import Table from "../common/table";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { useState } from "react";
-import { formatDate, formatSeconds } from "@/src/lib/util";
+import { formatBytes, formatDate, formatSeconds } from "@/src/lib/util";
 import ThreeDotMenu from "../common/threeDotMenu";
 import PlaylistActions from "./components/playlistActions";
 import useDebounce from "@/src/hooks/useDebounce";
-import { isEmpty } from "lodash";
+import { isEmpty, set } from "lodash";
 import EmptyState from "../common/emptyState";
 import Checkbox from "../common/checkBox";
+import { PlaylistEntity } from "@/types/types";
+import CreatePlaylist from "./components/createPlaylist";
 
 const Playlist = () => {
   const [createPlaylistOpen, setCreatePlaylistOpen] = useState(false);
@@ -26,7 +28,6 @@ const Playlist = () => {
   });
 
   const debouncedSearch = useDebounce(params.search, 400);
-  
 
   const { data: playlist } = useQuery({
     queryKey: ["playlist", { ...params, search: debouncedSearch }],
@@ -37,6 +38,8 @@ const Playlist = () => {
   });
 
   const [checkedItems, setCheckedItems] = useState<number[]>([]);
+  const [editPlaylist, setEditPlaylist] =
+    useState<PlaylistEntity | null>(null);
 
   const router = useRouter();
   const columns = [
@@ -102,7 +105,7 @@ const Playlist = () => {
         <>
           <span>Duration - {formatSeconds(item?.durationSec || 0)}</span>
           <br />
-          <span>Size - {item?.playlistSize || 0} MB</span>
+          <span>Size - {formatBytes(+item?.playlistSize || 0)}</span>
         </>
       ),
     },
@@ -131,7 +134,7 @@ const Playlist = () => {
             options={[
               {
                 label: "Edit",
-                onClick: () => router.push(`/playlist/${item.id}`),
+                onClick: () => setEditPlaylist(item),
               },
               {
                 label: "Delete",
@@ -152,7 +155,7 @@ const Playlist = () => {
         params={params}
         setParams={setParams}
         setCheckedItems={setCheckedItems}
-        checkedItems={checkedItems} 
+        checkedItems={checkedItems}
       />
       {isEmpty(playlist) ? (
         <EmptyState
@@ -163,6 +166,11 @@ const Playlist = () => {
       ) : (
         <Table data={playlist} columns={columns} maxHeight="h-auto" />
       )}
+      <CreatePlaylist
+        open={editPlaylist ? true : false}
+        onClose={() => setEditPlaylist(null)}
+        playlist={editPlaylist}
+      />
     </section>
   );
 };

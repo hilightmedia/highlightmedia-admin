@@ -5,7 +5,7 @@ import { useRouter } from "next/router";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import axiosInstance from "@/src/helpers/axios";
-import { formatDate, formatSeconds, formatTime } from "@/src/lib/util";
+import { formatBytes, formatDate, formatSeconds, formatTime } from "@/src/lib/util";
 import useDebounce from "@/src/hooks/useDebounce";
 
 import PlaylistFileActions from "./components/playlistFileActions";
@@ -200,7 +200,7 @@ const PlaylistItem = () => {
         header: "Thumbnail",
         key: "thumbnail",
         render: (item: any) =>
-          item.url ? (
+          (item.url && item.type.split("/")[0] === "image") ? (
             <Image
               src={item.url}
               alt={item.name}
@@ -217,10 +217,11 @@ const PlaylistItem = () => {
       {
         header: "Name",
         key: "name",
+        cellClassName: "max-w-[200px]",
         render: (item: any) => (
           <div className="flex flex-col gap-1">
             <button
-              className="hover:underline cursor-pointer text-left"
+              className="hover:underline cursor-pointer text-left truncate"
               onClick={() => {
                 if (item.type === "subPlaylist")
                   router.push(`/playlist/${item.subPlaylistId}`);
@@ -244,11 +245,12 @@ const PlaylistItem = () => {
       {
         header: "Item Details",
         key: "duration",
+        cellClassName: "min-w-[180px]",
         render: (item: any) => (
           <>
             <span>Duration - {formatSeconds(item?.duration || 0)}</span>
             <br />
-            <span>Size - {item?.size || 0} MB</span>
+            <span>Size - {formatBytes(+item?.size || 0)}</span>
           </>
         ),
       },
@@ -328,6 +330,7 @@ const PlaylistItem = () => {
         setCheckedItems={setCheckedItems}
         addFileOpen={addFileOpen}
         setAddFileOpen={setAddFileOpen}
+        defaultDuration={playlist?.defaultDuration || 30}
       />
 
       {!isLoading && (

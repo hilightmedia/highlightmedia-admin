@@ -130,3 +130,19 @@ export type SelectOption = {
   value: any;
   disabled?: boolean;
 };
+
+export type PlaylistEntity = {
+  id: number;
+  name: string;
+  defaultDuration?: number;
+};
+
+export type PlayerSortBy = "status" | "lastActive" | "duration" | "name";
+export type PlayerStatus = "Online" | "Offline";
+
+export type PlayerQueryParams = {
+  search?: string | null;
+  sortBy?: PlayerSortBy;
+  sortOrder?: SortOrder;
+  status?: PlayerStatus | null;
+};

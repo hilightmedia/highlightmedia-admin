@@ -98,3 +98,15 @@ export const isRangeSelected = (
   const fromDiff = Math.abs(from.getTime() - expectedFrom.getTime());
   return fromDiff <= DAY_MS;
 };
+
+export const formatBytes = (bytes: number) => {
+  if (!Number.isFinite(bytes)) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  let i = 0;
+  let n = bytes;
+  while (n >= 1024 && i < units.length - 1) {
+    n /= 1024;
+    i++;
+  }
+  return `${n.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+};

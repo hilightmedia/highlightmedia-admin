@@ -10,13 +10,14 @@ import {
 } from "../../common/dialog";
 import Image from "next/image";
 import { useMutation } from "@tanstack/react-query";
+import { formatBytes } from "@/src/lib/util";
 
 type UploadItemStatus = "queued" | "uploading" | "done" | "error" | "canceled";
 
 type UploadItem = {
   id: string;
   file: File;
-  progress: number; // 0..100
+  progress: number;
   status: UploadItemStatus;
   error?: string;
 };
@@ -25,7 +26,7 @@ type Props = {
   open: boolean;
   onClose: () => void;
   folderId: number;
-  maxFiles?: number; // default 10
+  maxFiles?: number;
   onUploaded?: (uploadedMedia: any[]) => void;
 };
 
@@ -41,17 +42,25 @@ const ALLOWED_MIME = new Set([
 
 const uid = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-const formatBytes = (bytes: number) => {
-  if (!Number.isFinite(bytes)) return "0 B";
-  const units = ["B", "KB", "MB", "GB"];
-  let i = 0;
-  let n = bytes;
-  while (n >= 1024 && i < units.length - 1) {
-    n /= 1024;
-    i++;
-  }
-  return `${n.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
-};
+
+
+const getVideoDuration = (file: File): Promise<number | null> =>
+  new Promise((resolve) => {
+    if (!file.type.startsWith("video/")) return resolve(null);
+    const url = URL.createObjectURL(file);
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.onloadedmetadata = () => {
+      const d = Number(video.duration);
+      URL.revokeObjectURL(url);
+      resolve(Number.isFinite(d) && d >= 0 ? Math.round(d) : null);
+    };
+    video.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+    video.src = url;
+  });
 
 export default function UploadFile({
   open,
@@ -67,7 +76,6 @@ export default function UploadFile({
   const [isDragging, setIsDragging] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
 
-  // reset when dialog closes
   useEffect(() => {
     if (!open) {
       setItems([]);
@@ -82,8 +90,13 @@ export default function UploadFile({
       const controller = new AbortController();
       abortRef.current = controller;
 
+      const duration = await getVideoDuration(item.file);
+
       const form = new FormData();
       form.append("file", item.file, item.file.name);
+      form.append("size", String(item.file.size));
+      if (duration != null) form.append("duration", String(duration));
+      form.append("type", item.file.type);
 
       const res = await axiosInstance.post(`/media/${folderId}/upload-media`, form, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -106,7 +119,10 @@ export default function UploadFile({
     },
   });
 
-  const canUpload = useMemo(() => items.length > 0 && !isUploading, [items.length, isUploading]);
+  const canUpload = useMemo(
+    () => items.length > 0 && !isUploading,
+    [items.length, isUploading]
+  );
 
   const addFiles = (files: FileList | File[]) => {
     const arr = Array.from(files);
@@ -166,7 +182,6 @@ export default function UploadFile({
     for (const item of items) {
       if (item.status === "done") continue;
 
-      // mark uploading
       setItems((prev) =>
         prev.map((x) => (x.id === item.id ? { ...x, status: "uploading", error: undefined } : x))
       );
@@ -174,7 +189,7 @@ export default function UploadFile({
       try {
         const data = await uploadFileMutation({ item });
 
-        if (Array.isArray(data?.media)) uploadedAll.push(...data.media);
+        if (data?.media) uploadedAll.push(data.media);
 
         setItems((prev) =>
           prev.map((x) => (x.id === item.id ? { ...x, status: "done", progress: 100 } : x))
@@ -219,7 +234,6 @@ export default function UploadFile({
     <>
       <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
         <DialogContent className="max-w-[650px] w-[92%] min-w-0 rounded-xl p-0 bg-white overflow-hidden">
-          {/* Header */}
           <div className="p-5 border-b flex items-center justify-between">
             <div className="min-w-0">
               <DialogTitle className="text-left text-base">Upload new media</DialogTitle>
@@ -233,9 +247,7 @@ export default function UploadFile({
             </button>
           </div>
 
-          {/* Body */}
           <div className="p-5 space-y-4 flex flex-col w-full min-w-0">
-            {/* Drop zone */}
             <div
               onDragEnter={(e) => {
                 e.preventDefault();
@@ -287,7 +299,6 @@ export default function UploadFile({
               />
             </div>
 
-            {/* File list */}
             {items.length > 0 ? (
               <div className="space-y-3 flex flex-col w-full min-w-0">
                 {items.map((it) => (
@@ -335,7 +346,6 @@ export default function UploadFile({
             ) : null}
           </div>
 
-          {/* Footer */}
           <div className="p-5 border-t flex items-center justify-end gap-3">
             <Button
               type="button"
@@ -358,7 +368,6 @@ export default function UploadFile({
         </DialogContent>
       </Dialog>
 
-      {/* Success Dialog */}
       <Dialog open={successOpen} onOpenChange={(next) => !next && setSuccessOpen(false)}>
         <DialogContent className="max-w-[420px] w-[92%] min-w-0 rounded-xl p-6 bg-white">
           <div className="flex flex-col items-center text-center gap-3">

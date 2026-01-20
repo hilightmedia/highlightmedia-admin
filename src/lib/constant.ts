@@ -119,3 +119,14 @@ export const PlaylistSortOptions: SelectOption[] = [
   { label: "Duration (High-Low)", value: "duration:desc" },
   { label: "Duration (Low-High)", value: "duration:asc" },
 ];
+
+export const PlayersSortOptions = [
+  { label: "Last Active (desc)", value: "lastActive:desc" },
+  { label: "Last Active (asc)", value: "lastActive:asc" },
+  { label: "Duration (desc)", value: "duration:desc" },
+  { label: "Duration (asc)", value: "duration:asc" },
+  { label: "Status (desc)", value: "status:desc" },
+  { label: "Status (asc)", value: "status:asc" },
+  { label: "Name (A-Z)", value: "name:asc" },
+  { label: "Name (Z-A)", value: "name:desc" },
+];

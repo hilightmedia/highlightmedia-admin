@@ -23,6 +23,7 @@ type FileRow = {
   fileType: string;
   fileKey: string;
   url: string;
+  duration?: number | string | null;
 };
 
 type Props = {
@@ -37,7 +38,7 @@ export default function AddFilesToPlaylistDialog({
   open,
   onClose,
   playlistId,
-  defaultDurationSec = 10,
+  defaultDurationSec = 30,
   onAdded,
 }: Props) {
   const [step, setStep] = React.useState<1 | 2>(1);
@@ -88,6 +89,12 @@ export default function AddFilesToPlaylistDialog({
     return files.filter((f) => f.name.toLowerCase().includes(s));
   }, [files, fileSearch]);
 
+  const fileById = React.useMemo(() => {
+    const m = new Map<number, FileRow>();
+    for (const f of files) m.set(f.id, f);
+    return m;
+  }, [files]);
+
   const allSelectedOnPage =
     filteredFiles.length > 0 &&
     filteredFiles.every((f) => checkedFileIds.includes(f.id));
@@ -100,18 +107,34 @@ export default function AddFilesToPlaylistDialog({
     });
   };
 
+  const toSafeInt = (v: any) => {
+    const n = typeof v === "string" ? Number(v) : typeof v === "number" ? v : NaN;
+    const i = Math.floor(n);
+    return Number.isFinite(i) && i > 0 ? i : null;
+  };
+
+  const getDurationForFile = (f?: FileRow | null) => {
+    if (!f) return defaultDurationSec;
+    const isVideo = String(f.fileType || "").toLowerCase().startsWith("video/");
+    if (!isVideo) return defaultDurationSec;
+    return toSafeInt(f.duration) ?? defaultDurationSec;
+  };
+
   const { mutate: addFiles, isPending } = useMutation({
     mutationFn: (fileIds: number[]) =>
       axiosInstance.post(`/playlist/${playlistId}/bulk-add-files`, {
         playlistId,
-        items: fileIds.map((id) => ({
-          fileId: id,
-          duration: defaultDurationSec,
-        })),
+        items: fileIds.map((id) => {
+          const f = fileById.get(id);
+          return {
+            fileId: id,
+            duration: getDurationForFile(f),
+          };
+        }),
       }),
     onSuccess: () => {
       onAdded?.();
-       queryClient.invalidateQueries({ queryKey: ["playlist", playlistId] });
+      queryClient.invalidateQueries({ queryKey: ["playlist", playlistId] });
       onClose();
     },
   });

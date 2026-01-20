@@ -7,7 +7,7 @@ import Checkbox from "../common/checkBox";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import FileActions from "./components/fileActions";
-import { formatDate, formatTime } from "@/src/lib/util";
+import { formatBytes, formatDate, formatTime } from "@/src/lib/util";
 import { get, isEmpty } from "lodash";
 import { FileParams } from "@/types/types";
 import useDebounce from "@/src/hooks/useDebounce";
@@ -55,27 +55,6 @@ const Files = () => {
       return axiosInstance.post(`/media/delete-file`, { fileId: id });
     },
 
-    // onMutate: async (id: number) => {
-    //   await queryClient.cancelQueries({ queryKey: ["media", folderId] });
-
-    //   const prev = queryClient.getQueriesData<any[]>({
-    //     queryKey: ["media", folderId],
-    //   });
-
-    //    queryClient.setQueriesData<any[]>(
-    //     { queryKey: ["media", folderId], exact: false },
-    //     (old) => (old ? old.filter((f) => f.id !== id) : old),
-    //   );
-
-    //   return { prev };
-    // },
-
-    // onError: (err, id, ctx) => {
-    //   console.error("delete failed:", err);
-    //   if (ctx?.prev) {
-    //     for (const [key, data] of ctx.prev) queryClient.setQueryData(key, data);
-    //   }
-    // },
 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["media", folderId] });
@@ -167,7 +146,7 @@ const Files = () => {
       header: "File Size",
       key: "items",
       render: (item: any) => (
-        <span>{(Number(item.fileSize) || 0).toFixed(2)} MB</span>
+        <span>{formatBytes(item.fileSize)}</span>
       ),
     },
     {

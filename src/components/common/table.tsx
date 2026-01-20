@@ -3,6 +3,7 @@
 import React from "react";
 import { isEmpty } from "lodash";
 import { cn } from "@/src/lib/util";
+import Image from "next/image";
 
 type TableOverflow = "x" | "y" | "both" | "none";
 
@@ -27,8 +28,27 @@ export type TableProps<T> = {
   theadClassName?: string;
   tbodyClassName?: string;
 
+  // ✅ empty state is now optional (disabled by default)
+  showEmpty?: boolean; // default false
   emptyMessage?: string;
+
   onRowClick?: (item: T, index: number) => void;
+
+  // ✅ new
+  loading?: boolean;
+  error?: boolean; // if true, show error mockup (no message)
+  onRetry?: () => void;
+  retryLabel?: string;
+
+  // mockup images (put in /public)
+  loadingImgSrc?: string;
+  errorImgSrc?: string;
+  emptyImgSrc?: string;
+
+  // optional titles (no error message allowed)
+  loadingTitle?: string;
+  emptyTitle?: string;
+  errorTitle?: string;
 };
 
 type Props<T> = TableProps<T> & {
@@ -44,6 +64,41 @@ type Props<T> = TableProps<T> & {
   ) => React.HTMLAttributes<HTMLTableRowElement>;
 };
 
+function StateCard({
+  imgSrc,
+  title,
+  subtitle,
+  children,
+}: {
+  imgSrc: string;
+  title: string;
+  subtitle?: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col justify-center items-center p-6 gap-4 w-full h-[400px] text-black/60">
+      <div className="relative w-[220px] h-[160px]">
+        <Image
+          src={imgSrc}
+          alt={title}
+          fill
+          className="object-contain"
+          priority
+        />
+      </div>
+
+      <div className="flex flex-col items-center gap-1 max-w-[520px]">
+        <p className="text-base font-medium text-black/70">{title}</p>
+        {subtitle ? (
+          <p className="text-sm text-center text-black/40">{subtitle}</p>
+        ) : null}
+      </div>
+
+      {children}
+    </div>
+  );
+}
+
 export default function Table<T>({
   data,
   columns,
@@ -56,22 +111,71 @@ export default function Table<T>({
   theadClassName = "",
   tbodyClassName = "",
   emptyMessage = "",
-  onRowClick,
 
+  // ✅ new
+  showEmpty = false,
+  loading = false,
+  error = false,
+  onRetry,
+  retryLabel = "Retry",
+
+  loadingImgSrc = "/mockups/loading.png",
+  errorImgSrc = "/mockups/error.png",
+  emptyImgSrc = "/mockups/empty.png",
+
+  loadingTitle = "Loading",
+  emptyTitle = "No data found",
+  errorTitle = "Something went wrong",
+
+  onRowClick,
   tableOverflow = "x",
   maxHeight = "h-[500px]",
   tableRef,
   containerRef,
   getRowProps,
 }: Props<T>) {
-  if (isEmpty(data)) {
+  // ✅ Loading state
+  if (loading) {
     return (
-      <div className="flex flex-col justify-center items-center p-6 gap-4 w-full h-[400px] text-black/40">
-        <p className="text-center">
-          {emptyMessage || "No data found."}
-        </p>
-      </div>
+      <StateCard
+        imgSrc={loadingImgSrc}
+        title={loadingTitle}
+        subtitle="Please wait…"
+      />
     );
+  }
+
+  // ✅ Error state (NO message)
+  if (error) {
+    return (
+      <StateCard imgSrc={errorImgSrc} title={errorTitle}>
+        {onRetry ? (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="mt-2 px-4 py-2 rounded-lg border border-primary text-primary bg-white"
+          >
+            {retryLabel}
+          </button>
+        ) : null}
+      </StateCard>
+    );
+  }
+
+  // ✅ Empty state (optional)
+  if (showEmpty && isEmpty(data)) {
+    return (
+      <StateCard
+        imgSrc={emptyImgSrc}
+        title={emptyTitle}
+        subtitle={emptyMessage || undefined}
+      />
+    );
+  }
+
+  // If empty state is disabled, render an empty container (or you can return null)
+  if (isEmpty(data)) {
+    return null;
   }
 
   const overflowClass =

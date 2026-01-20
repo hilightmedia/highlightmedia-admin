@@ -23,6 +23,7 @@ interface Props {
   setCheckedItems: React.Dispatch<React.SetStateAction<any>>;
   addFileOpen: boolean;
   setAddFileOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  defaultDuration: number;
 }
 
 export default function PlaylistFileActions({
@@ -33,7 +34,7 @@ export default function PlaylistFileActions({
   playlistId,
   addFileOpen,
   setAddFileOpen,
-
+  defaultDuration,
 }: Props) {
   const [filtersOpen, setFiltersOpen] = React.useState(false);
   const [bulkAction, setBulkAction] = React.useState("");
@@ -150,6 +151,7 @@ export default function PlaylistFileActions({
         playlistId={playlistId}
         open={addFileOpen}
         onClose={() => setAddFileOpen(false)}
+        defaultDurationSec={defaultDuration}
       />
       <AddSubPlaylistsToPlaylistDialog
         playlistId={playlistId}
