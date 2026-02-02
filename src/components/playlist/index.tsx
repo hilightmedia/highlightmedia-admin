@@ -1,19 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/src/helpers/axios";
 import Table from "../common/table";
-import Image from "next/image";
 import { useRouter } from "next/router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { formatBytes, formatDate, formatSeconds } from "@/src/lib/util";
 import ThreeDotMenu from "../common/threeDotMenu";
 import PlaylistActions from "./components/playlistActions";
 import useDebounce from "@/src/hooks/useDebounce";
-import { isEmpty, set } from "lodash";
+import { isEmpty } from "lodash";
 import EmptyState from "../common/emptyState";
 import Checkbox from "../common/checkBox";
 import { PlaylistEntity } from "@/types/types";
 import CreatePlaylist from "./components/createPlaylist";
 import PopupConfirm from "../common/popupConfirm";
+import { RenderThumbnail } from "../common/thumb";
 
 const Playlist = () => {
   const [createPlaylistOpen, setCreatePlaylistOpen] = useState(false);
@@ -30,22 +30,25 @@ const Playlist = () => {
 
   const debouncedSearch = useDebounce(params.search, 400);
 
+  const queryParams = useMemo(
+    () => ({ ...params, search: debouncedSearch }),
+    [params, debouncedSearch],
+  );
+
   const { data: playlist } = useQuery({
-    queryKey: ["playlist", { ...params, search: debouncedSearch }],
-    queryFn: () =>
-      axiosInstance
-        .get("/playlist", { params })
-        .then((res) => res.data.playlists),
+    queryKey: ["playlist", queryParams],
+    queryFn: () => axiosInstance.get("/playlist", { params: queryParams }).then((res) => res.data.playlists),
+    staleTime: 0,
   });
-  const initialConfirmState = { open: false, id: null };
+
+  const initialConfirmState = { open: false, id: null as number | null };
   const [confirmOpen, setConfirmOpen] = useState(initialConfirmState);
   const queryClient = useQueryClient();
 
   const { mutate, isPending } = useMutation({
     mutationFn: (id: number) => axiosInstance.delete(`/playlist/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["playlist"], exact: true });
-
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["playlist"] });
       setConfirmOpen(initialConfirmState);
     },
   });
@@ -54,6 +57,7 @@ const Playlist = () => {
   const [editPlaylist, setEditPlaylist] = useState<PlaylistEntity | null>(null);
 
   const router = useRouter();
+
   const columns = [
     {
       header: "",
@@ -65,9 +69,7 @@ const Playlist = () => {
           checked={checkedItems.includes(item.id)}
           onCheckedChange={(checked) => {
             setCheckedItems(
-              checked
-                ? [...checkedItems, item.id]
-                : checkedItems.filter((id) => id !== item.id),
+              checked ? [...checkedItems, item.id] : checkedItems.filter((id) => id !== item.id),
             );
           }}
         />
@@ -76,30 +78,16 @@ const Playlist = () => {
     {
       header: "Thumbnail",
       key: "thumbnail",
-      render: (item: any) =>
-        item.thumbnail ? (
-          <Image
-            src={item.thumbnail}
-            alt={item.name}
-            width={500}
-            height={500}
-            className="rounded-lg h-[50px] w-[70px] object-cover"
-          />
-        ) : (
-          <div className="bg-gray-200 rounded-lg h-[50px] w-[70px] flex items-center justify-center text-gray-500">
-            N/A
-          </div>
-        ),
+      render: (item: any) => (
+        <RenderThumbnail thumbnail={item.thumbnail} alt={item.name} type="playlist" />
+      ),
     },
     {
       header: "Name",
       key: "name",
       render: (item: any) => (
         <div className="flex flex-col gap-1">
-          <button
-            className="hover:underline cursor-pointer text-left"
-            onClick={() => router.push(`/playlist/${item.id}`)}
-          >
+          <button className="hover:underline cursor-pointer text-left" onClick={() => router.push(`/playlist/${item.id}`)}>
             {item.name}
           </button>
         </div>
@@ -141,17 +129,11 @@ const Playlist = () => {
       header: "Actions",
       key: "actions",
       render: (item: any) => (
-        <div className=" text-[#667085]">
+        <div className="text-[#667085]">
           <ThreeDotMenu
             options={[
-              {
-                label: "Edit",
-                onClick: () => setEditPlaylist(item),
-              },
-              {
-                label: "Delete",
-                onClick: () => setConfirmOpen({ open: true, id: item.id }),
-              },
+              { label: "Edit", onClick: () => setEditPlaylist(item) },
+              { label: "Delete", onClick: () => setConfirmOpen({ open: true, id: item.id }) },
             ]}
           />
         </div>
@@ -169,6 +151,7 @@ const Playlist = () => {
         setCheckedItems={setCheckedItems}
         checkedItems={checkedItems}
       />
+
       {isEmpty(playlist) ? (
         <EmptyState
           image="/emptyFolder.svg"
@@ -176,24 +159,29 @@ const Playlist = () => {
           message="Add Files to this playlist"
         />
       ) : (
-        <Table data={playlist} columns={columns} maxHeight="h-auto" />
+        <Table data={playlist || []} columns={columns} maxHeight="h-auto" />
       )}
+
       <CreatePlaylist
-        open={editPlaylist ? true : false}
-        onClose={() => setEditPlaylist(null)}
+        open={createPlaylistOpen || Boolean(editPlaylist)}
+        onClose={() => {
+          setCreatePlaylistOpen(false);
+          setEditPlaylist(null);
+        }}
         playlist={editPlaylist}
       />
-        {
-          confirmOpen.id && <PopupConfirm
-              open={confirmOpen.open}
-              onClose={() => setConfirmOpen(initialConfirmState)}
-              onConfirm={() => mutate(confirmOpen?.id || 0)}
-              title="Delete Playlists"
-              message="Are you sure you want to delete this Playlists?"
-              confirmText="Delete"
-              loading={isPending}
-            />
-        }
+
+      {confirmOpen.id && (
+        <PopupConfirm
+          open={confirmOpen.open}
+          onClose={() => setConfirmOpen(initialConfirmState)}
+          onConfirm={() => mutate(confirmOpen.id || 0)}
+          title="Delete Playlists"
+          message="Are you sure you want to delete this Playlists?"
+          confirmText="Delete"
+          loading={isPending}
+        />
+      )}
     </section>
   );
 };

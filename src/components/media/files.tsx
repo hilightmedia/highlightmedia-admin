@@ -15,6 +15,7 @@ import EditFileName from "./components/editFileName";
 import EmptyState from "../common/emptyState";
 import PopupConfirm from "../common/popupConfirm";
 import Breadcrumbs from "../common/breadCrumbs";
+import { RenderThumbnail } from "../common/thumb";
 
 const Files = () => {
   const [params, setParams] = useState<FileParams>({
@@ -55,7 +56,6 @@ const Files = () => {
       return axiosInstance.post(`/media/delete-file`, { fileId: id });
     },
 
-
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["media", folderId] });
       setConfirmOpen(initialConfirmState);
@@ -64,7 +64,6 @@ const Files = () => {
 
   const handleDelete = () => {
     if (confirmOpen.id) {
-      
       mutate(confirmOpen.id);
     }
   };
@@ -101,19 +100,20 @@ const Files = () => {
     {
       header: "Thumbnail",
       key: "thumbnail",
-      render: (item: any) =>
-        item.fileType && item.fileType.includes("image") ? (
-          <Image
-            src={item.url}
-            alt={item.name}
-            width={70}
-            height={50}
-            className="rounded-lg h-[50px] w-[70px] object-cover cursor-pointer"
-          />
-        ) : (
-          <Folder size={60} />
-        ),
+      render: (item: any) => (
+        <RenderThumbnail
+          thumbnail={
+            item.fileType?.startsWith("image/")
+              ? item.url || null
+              : null
+          }
+          alt={item.name}
+          type="file"
+          fileType={item.fileType}
+        />
+      ),
     },
+
     {
       header: "File Name",
       key: "name",
@@ -145,9 +145,7 @@ const Files = () => {
     {
       header: "File Size",
       key: "items",
-      render: (item: any) => (
-        <span>{formatBytes(item.fileSize)}</span>
-      ),
+      render: (item: any) => <span>{formatBytes(item.fileSize)}</span>,
     },
     {
       header: "Created At",

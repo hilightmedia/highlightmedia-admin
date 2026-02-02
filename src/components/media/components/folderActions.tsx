@@ -35,7 +35,6 @@ export default function FolderActions({
 }: Props) {
   const [filtersOpen, setFiltersOpen] = React.useState(false);
   const [bulkAction, setBulkAction] = React.useState("");
-  console.log(bulkAction);
 
   return (
     <>

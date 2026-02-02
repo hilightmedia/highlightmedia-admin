@@ -16,8 +16,6 @@ import GradientIconContainer from "../../common/gradientIconContainer";
 import { Input } from "../../common/input";
 import { PlaylistEntity } from "@/types/types";
 
-
-
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -67,28 +65,18 @@ export default function CreatePlaylist({ open, onClose, playlist }: Props) {
     };
   }, [formData.defaultDuration, formData.name, activePlaylist?.id]);
 
-  const onSuccess = () => {
-    if (isEdit) {
-      queryClient.setQueryData(["playlist"], (old: any[] | undefined) => {
-        if (!old) return old;
-        return old.map((p) => {
-          if (p.id === activePlaylist?.id) {
-            return { ...p, name: payload.name, defaultDuration: payload.defaultDuration };
-          }
-          return p;
-        });
-      });
-      queryClient.invalidateQueries({ queryKey: ["playlist", activePlaylist?.id] });
-    } else {
-      queryClient.invalidateQueries({ queryKey: ["playlist"] });
-    }
+  const onSuccess = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["playlist"] });
     onClose();
   };
 
   const { mutate, isPending } = useMutation({
     mutationFn: () =>
-      axiosInstance.post(isEdit ? `/playlist/${activePlaylist?.id}/edit-playlist` : "/playlist/create", payload),
-    onSuccess: () => onSuccess(),
+      axiosInstance.post(
+        isEdit ? `/playlist/${activePlaylist?.id}/edit-playlist` : "/playlist/create",
+        payload,
+      ),
+    onSuccess,
   });
 
   const submit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -125,7 +113,7 @@ export default function CreatePlaylist({ open, onClose, playlist }: Props) {
           <div className="inline-flex flex-col gap-2">
             <label className="font-medium text-sm">Playlist Name</label>
             <Input
-              type="name"
+              type="text"
               placeholder="Enter your playlist name"
               className="w-full"
               value={formData.name}

@@ -17,7 +17,6 @@ import GradientIconContainer from "../../common/gradientIconContainer";
 import { Input } from "../../common/input";
 import DateRangePickerModal from "../../common/dateRangePicker";
 
-
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -51,59 +50,6 @@ export default function CreateFolder({ open, onClose, folder }: Props) {
 
   const isEdit = Boolean(activeFolder?.id);
 
-  const onSuccess = () => {
-    if (isEdit) {
-      queryClient.setQueryData(["folders"], (old: any[] | undefined) => {
-        if (!old) return old;
-        return old.map((f) => {
-          if (f.id === activeFolder?.id) {
-            return {
-              ...f,
-              name: formData.name,
-              start_date: formData.start_date,
-              end_date: formData.end_date,
-            };
-          }
-          return f;
-        });
-      });
-    } else {
-      queryClient.invalidateQueries({ queryKey: ["folders"] });
-    }
-    onClose();
-  };
-
-  const { mutate, isPending } = useMutation({
-    mutationFn: () =>
-      axiosInstance.post(
-        isEdit ? "/media/edit-folder" : "/media/folders/create",
-        expirable
-          ? {
-              name: formData.name,
-              folderId: activeFolder?.id,
-              start_date: formData.start_date?.split("T")[0],
-              end_date: formData.end_date?.split("T")[0],
-            }
-          : { name: formData.name, folderId: activeFolder?.id }
-      ),
-    onSuccess: () => onSuccess(),
-  });
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!formData.name) {
-      alert("Please enter a name");
-      return;
-    }
-    if (expirable) {
-      if (!formData.start_date || !formData.end_date) {
-        alert("Please enter a start date and end date");
-        return;
-      }
-    }
-    mutate();
-  };
-
   useEffect(() => {
     if (!open) return;
 
@@ -116,7 +62,7 @@ export default function CreateFolder({ open, onClose, folder }: Props) {
     const hasDates = Boolean(folder?.start_date && folder?.end_date);
     setExpirable(hasDates);
     setDateOpen(false);
-  }, [open]);
+  }, [open, folder]);
 
   const initialPickerValue: PickerValue = useMemo(() => {
     if (!formData.start_date && !formData.end_date) return null;
@@ -175,6 +121,38 @@ export default function CreateFolder({ open, onClose, folder }: Props) {
     setDateOpen(false);
   };
 
+  const onSuccess = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["folders"] });
+    onClose();
+  };
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: () =>
+      axiosInstance.post(
+        isEdit ? "/media/edit-folder" : "/media/folders/create",
+        expirable
+          ? {
+              name: formData.name,
+              folderId: activeFolder?.id,
+              start_date: formData.start_date?.split("T")[0],
+              end_date: formData.end_date?.split("T")[0],
+            }
+          : { name: formData.name, folderId: activeFolder?.id },
+      ),
+    onSuccess,
+  });
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!formData.name) return alert("Please enter a name");
+    if (expirable && (!formData.start_date || !formData.end_date)) {
+      return alert("Please enter a start date and end date");
+    }
+
+    mutate();
+  };
+
   return (
     <>
       <DateRangePickerModal
@@ -213,25 +191,16 @@ export default function CreateFolder({ open, onClose, folder }: Props) {
             <div className="inline-flex flex-col gap-2">
               <label className="font-medium text-sm">Folder Name</label>
               <Input
-                type="name"
+                type="text"
                 placeholder="Enter your folder name"
                 className="w-full"
-                value={formData?.name || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
+                value={formData.name || ""}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
 
             <div className="flex flex-col gap-2">
               <label className="font-medium text-sm">Validity</label>
-
-              <Input
-                type="radio"
-                className="hidden"
-                checked={expirable}
-                onChange={(e) => setExpirable(e.target.checked)}
-              />
 
               <div className="flex gap-5">
                 <span
@@ -258,16 +227,14 @@ export default function CreateFolder({ open, onClose, folder }: Props) {
                   Custom
                 </span>
               </div>
-              <p>{(expirable && formData?.start_date && formData?.end_date) ? `From ${new Date(formData.start_date).toLocaleDateString()} to ${new Date(formData.end_date).toLocaleDateString()}` : ""}</p>
-            </div>
 
-            <div className="flex gap-3">
-              <Input
-                type="radio"
-                className="hidden"
-                checked={expirable}
-                onChange={(e) => setExpirable(e.target.checked)}
-              />
+              <p>
+                {expirable && formData.start_date && formData.end_date
+                  ? `From ${new Date(formData.start_date).toLocaleDateString()} to ${new Date(
+                      formData.end_date,
+                    ).toLocaleDateString()}`
+                  : ""}
+              </p>
             </div>
 
             <div className="flex gap-3">

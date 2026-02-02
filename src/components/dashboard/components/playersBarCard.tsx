@@ -1,7 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Bar } from "react-chartjs-2";
+import { useQuery } from "@tanstack/react-query";
+import axiosInstance from "@/src/helpers/axios";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -14,30 +16,74 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-export default function PlayersBarCard() {
-  const data = {
-    labels: ["Anna\nnagar", "Pudur", "KK\nnagar", "Theppa\nkulam", "Simmakal", "Keelavocval"],
-    datasets: [
-      {
-        label: "Ads",
-        data: [20, 16, 15, 10, 6, 3],
-        backgroundColor: ["#ff6a00", "#ff8a3d", "#ff8a3d", "#ffb07a", "#ffd1b3", "#ffe3d3"],
-        borderRadius: 8,
-        barThickness: 28,
-      },
-    ],
-  };
+type Props = { date: string };
+
+type TopPlayerItem = {
+  playerId: number;
+  playerName: string;
+  adsPlayed: number;
+};
+
+const wrapLabel = (s: string) => {
+  const parts = String(s || "").split(/\s+|_/g).filter(Boolean);
+  if (parts.length <= 1) return s;
+  const a = parts.slice(0, Math.ceil(parts.length / 2)).join(" ");
+  const b = parts.slice(Math.ceil(parts.length / 2)).join(" ");
+  return `${a}\n${b}`;
+};
+
+export default function PlayersBarCard({ date }: Props) {
+  const { data: items } = useQuery({
+    queryKey: ["analytics", "top-players", date],
+    queryFn: () =>
+      axiosInstance
+        .get("/analytics/top-players", { params: { date } })
+        .then((r) => r.data.items as TopPlayerItem[]),
+  });
+
+  const chart = useMemo(() => {
+    const list = items ?? [];
+    const labels = list.length ? list.map((x) => wrapLabel(x.playerName)) : ["No Data"];
+    const values = list.length ? list.map((x) => x.adsPlayed) : [0];
+
+    const bg = ["#ff6a00", "#ff8a3d", "#ff8a3d", "#ffb07a", "#ffd1b3"];
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: "Ads",
+          data: values,
+          backgroundColor: values.map((_, i) => bg[i % bg.length]),
+          borderRadius: 8,
+          barThickness: 28,
+        },
+      ],
+    };
+  }, [items]);
+
+  const maxY = useMemo(() => {
+    const v = (items ?? []).map((x) => x.adsPlayed);
+    const m = v.length ? Math.max(...v) : 0;
+    if (m <= 5) return 5;
+    if (m <= 10) return 10;
+    if (m <= 20) return 20;
+    return Math.ceil(m / 10) * 10;
+  }, [items]);
 
   const options: any = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: { legend: { display: false } },
     scales: {
-      x: { grid: { display: false }, ticks: { color: "#8a8f98", font: { size: 11, weight: 600 } } },
+      x: {
+        grid: { display: false },
+        ticks: { color: "#8a8f98", font: { size: 11, weight: 600 } },
+      },
       y: {
         beginAtZero: true,
-        max: 20,
-        ticks: { stepSize: 5, color: "#8a8f98", font: { size: 11, weight: 600 } },
+        max: maxY,
+        ticks: { stepSize: Math.max(1, Math.floor(maxY / 4)), color: "#8a8f98", font: { size: 11, weight: 600 } },
         grid: { color: "#eef0f3" },
       },
     },
@@ -50,7 +96,7 @@ export default function PlayersBarCard() {
         <span className="absolute right-4 top-3 text-xs text-black/50">⤢</span>
       </div>
       <div className="h-[260px] p-4 pb-6">
-        <Bar data={data} options={options} />
+        <Bar data={chart} options={options} />
       </div>
     </div>
   );

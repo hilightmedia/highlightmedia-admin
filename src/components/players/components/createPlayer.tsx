@@ -18,13 +18,12 @@ import { Input } from "../../common/input";
 import { isEmpty } from "lodash";
 import Select from "../../common/select";
 
-// Adjust to your actual Player type if different
 export type PlayerEntity = {
   id: number;
   name: string;
   location: string;
   playlistId: number | null;
-  deviceKey?: string; // optional because you may not return it from backend list
+  deviceKey?: string; 
 };
 
 type Props = {
@@ -68,7 +67,7 @@ export default function CreatePlayer({ open, onClose, player }: Props) {
         typeof activePlayer?.playlistId === "number"
           ? activePlayer.playlistId
           : null,
-      deviceKey: "",
+      deviceKey: activePlayer?.deviceKey ?? "",
     });
   }, [open, activePlayer]);
 
@@ -83,7 +82,6 @@ export default function CreatePlayer({ open, onClose, player }: Props) {
   }, [formData, activePlayer?.id]);
 
   const onSuccess = () => {
-    // keep it simple & consistent: refetch list
     queryClient.invalidateQueries({ queryKey: ["players"] });
     onClose();
   };
@@ -199,11 +197,7 @@ export default function CreatePlayer({ open, onClose, player }: Props) {
                 setFormData((p) => ({ ...p, deviceKey: e.target.value }))
               }
             />
-            {isEdit ? (
-              <p className="text-xs text-gray-500">
-                For security, device key may not be shown. Re-enter to update.
-              </p>
-            ) : null}
+            
           </div>
 
           <div className="flex gap-3">

@@ -5,15 +5,16 @@ import FolderActions from "./components/folderActions";
 import Table from "../common/table";
 import Image from "next/image";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { FolderParams, Folders } from "@/types/types";
 import CreateFolder from "./components/createFolder";
 import { isEmpty } from "lodash";
 import useDebounce from "@/src/hooks/useDebounce";
-import Checkbox  from "../common/checkBox";
+import Checkbox from "../common/checkBox";
 import EmptyState from "../common/emptyState";
 import PopupConfirm from "../common/popupConfirm";
 import { formatBytes } from "@/src/lib/util";
+import { RenderThumbnail } from "../common/thumb";
 
 const Folder = () => {
   const queryClient = useQueryClient();
@@ -27,41 +28,44 @@ const Folder = () => {
     status: null,
   });
 
-  const { data: folders, refetch } = useQuery({
-    queryKey: ["folders"],
+  const debouncedSearch = useDebounce(params.search, 400);
+
+  const queryParams = useMemo(
+    () => ({
+      ...params,
+      search: debouncedSearch,
+    }),
+    [params, debouncedSearch],
+  );
+
+  const { data: folders, isFetching } = useQuery({
+    queryKey: ["folders", queryParams],
     queryFn: () =>
-      axiosInstance
-        .get("/media/folders", { params })
-        .then((res) => res.data.media),
+      axiosInstance.get("/media/folders", { params: queryParams }).then((res) => res.data.media),
+    staleTime: 0,
   });
+
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
-  const initialConfirmState = { open: false, id: null };
+  const initialConfirmState = { open: false, id: null as number | null };
   const [confirmOpen, setConfirmOpen] = useState(initialConfirmState);
 
   const { mutate, isPending } = useMutation({
-    mutationFn: (id: number) =>
-      axiosInstance.post(`/media/delete-folder`, { folderId: id }),
-    onSuccess: () => {
-      queryClient.setQueryData(["folders"], (old: any[] | undefined) => {
-        if (!old) return old;
-        return old.filter((f) => f.id !== confirmOpen.id);
-      });
-
+    mutationFn: (id: number) => axiosInstance.post(`/media/delete-folder`, { folderId: id }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["folders"] });
       setConfirmOpen(initialConfirmState);
     },
   });
 
   const handleDelete = () => {
-    if (confirmOpen.id) {
-      mutate(confirmOpen.id);
-    }
+    if (confirmOpen.id) mutate(confirmOpen.id);
   };
 
   const [checkedItems, setCheckedItems] = useState<number[]>([]);
-
   const [editFolder, setEditFolder] = useState<Folders | null>(null);
 
   const router = useRouter();
+
   const columns = [
     {
       header: "",
@@ -73,9 +77,7 @@ const Folder = () => {
           checked={checkedItems.includes(item.id)}
           onCheckedChange={(checked) => {
             setCheckedItems(
-              checked
-                ? [...checkedItems, item.id]
-                : checkedItems.filter((id) => id !== item.id)
+              checked ? [...checkedItems, item.id] : checkedItems.filter((id) => id !== item.id),
             );
           }}
         />
@@ -85,19 +87,7 @@ const Folder = () => {
       header: "Thumbnail",
       key: "thumbnail",
       render: (item: any) =>
-        item.thumbnail ? (
-          <Image
-            src={item.thumbnail}
-            alt={item.name}
-            width={500}
-            height={500}
-            className="rounded-lg h-[50px] w-[70px] object-cover"
-          />
-        ) : (
-          <div className="bg-gray-200 rounded-lg h-[50px] w-[70px] flex items-center justify-center text-gray-500">
-            N/A
-          </div>
-        ),
+        <RenderThumbnail thumbnail={item.thumbnail} alt={item.name} type="folder" />,
     },
     {
       header: "Folder Name",
@@ -120,9 +110,7 @@ const Folder = () => {
     {
       header: "File Size",
       key: "items",
-      render: (item: any) => (
-        <span>{formatBytes(item.folderSize)}</span>
-      ),
+      render: (item: any) => <span>{formatBytes(item.folderSize)}</span>,
     },
     {
       header: "Last Modified",
@@ -160,8 +148,7 @@ const Folder = () => {
           <span
             className={`py-0.5 inline-flex items-center gap-1 px-3 rounded-full text-sm capitalize ${validityStatusColor}`}
           >
-            <Badge color={badgeColor} fill={badgeColor} className="h-2 w-2" />{" "}
-            {item.validityStatus}
+            <Badge color={badgeColor} fill={badgeColor} className="h-2 w-2" /> {item.validityStatus}
           </span>
         );
       },
@@ -173,8 +160,7 @@ const Folder = () => {
         <div className="inline-flex flex-col items-center text-xs">
           {item.validityStart && item.validityEnd ? (
             <>
-              <span>{new Date(item.validityStart).toLocaleDateString()}</span>
-              to
+              <span>{new Date(item.validityStart).toLocaleDateString()}</span>to
               <span>{new Date(item.validityEnd).toLocaleDateString()}</span>
             </>
           ) : (
@@ -187,11 +173,7 @@ const Folder = () => {
       header: "Status",
       key: "status",
       render: (item: any) => (
-        <span
-          className={
-            item.status === "active" ? "text-[#EA6535]" : "text-[#BCBCBC]"
-          }
-        >
+        <span className={item.status === "active" ? "text-[#EA6535]" : "text-[#BCBCBC]"}>
           {item.status === "active" ? "Active" : "Inactive"}
         </span>
       ),
@@ -220,20 +202,6 @@ const Folder = () => {
       ),
     },
   ];
-  const debouncedSearch = useDebounce(params.search, 400);
-
-  useEffect(() => {
-    refetch();
-  }, [
-    refetch,
-    params.sortBy,
-    params.sortOrder,
-    params.lastModifiedFrom,
-    params.lastModifiedTo,
-    params.sizeBucket,
-    params.status,
-    debouncedSearch,
-  ]);
 
   return (
     <section className="p-6 w-full flex flex-col gap-6 max-w-screen-xl mx-auto">
@@ -245,6 +213,7 @@ const Folder = () => {
         checkedItems={checkedItems}
         setCheckedItems={setCheckedItems}
       />
+
       {isEmpty(folders) ? (
         <EmptyState
           image="/emptyFolder.svg"
@@ -254,11 +223,13 @@ const Folder = () => {
       ) : (
         <Table data={folders || []} columns={columns} maxHeight="h-auto" />
       )}
+
       <CreateFolder
-        open={editFolder ? true : false}
+        open={Boolean(editFolder)}
         onClose={() => setEditFolder(null)}
         folder={editFolder}
       />
+
       <PopupConfirm
         open={confirmOpen.open}
         onClose={() => setConfirmOpen(initialConfirmState)}

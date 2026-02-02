@@ -2,10 +2,15 @@ import { GripVertical } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import { useRouter } from "next/router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 import axiosInstance from "@/src/helpers/axios";
-import { formatBytes, formatDate, formatSeconds, formatTime } from "@/src/lib/util";
+import {
+  formatBytes,
+  formatDate,
+  formatSeconds,
+  formatTime,
+} from "@/src/lib/util";
 import useDebounce from "@/src/hooks/useDebounce";
 
 import PlaylistFileActions from "./components/playlistFileActions";
@@ -20,6 +25,7 @@ import { PlaylistOutlined } from "../common/icon";
 import PopupConfirm from "../common/popupConfirm";
 import { isEmpty } from "lodash";
 import EmptyState from "../common/emptyState";
+import { RenderThumbnail } from "../common/thumb";
 
 type ConfirmState = { open: boolean; id: number | null };
 
@@ -57,7 +63,6 @@ const PlaylistItem = () => {
   const debouncedSearch = useDebounce(params.search, 500);
 
   const [reorderMode, setReorderMode] = useState(false);
-
   const [addFileOpen, setAddFileOpen] = useState(false);
 
   const queryKey = useMemo(
@@ -66,6 +71,7 @@ const PlaylistItem = () => {
   );
 
   const tableRef = useRef<HTMLDivElement | null>(null);
+
   const { data: playlist, isLoading } = useQuery({
     queryKey,
     enabled,
@@ -82,14 +88,15 @@ const PlaylistItem = () => {
     setItems(playlist?.items || []);
   }, [playlist?.items]);
 
+  const invalidatePlaylist = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["playlist", playListId] });
+  };
+
   const { mutate: deleteFile, isPending: isDeleting } = useMutation({
     mutationFn: async (id: number) =>
       axiosInstance.delete(`/playlist/playlistFile/${id}`),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["playlist", playListId],
-        exact: true,
-      });
+      await invalidatePlaylist();
       setConfirmOpen({ open: false, id: null });
     },
   });
@@ -104,19 +111,18 @@ const PlaylistItem = () => {
       playOrder: number;
     }) => axiosInstance.post("/playlist/move-item", payload),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["playlist", playListId],
-      });
+      await invalidatePlaylist();
     },
   });
 
   const { mutate: duplicateItem } = useMutation({
-    mutationFn: async (payload: { playlistFileId: number }) =>
-      axiosInstance.post("/playlist/add-file", payload),
+    mutationFn: async (payload: {
+      playlistId: number;
+      fileId: number;
+      duration: number;
+    }) => axiosInstance.post("/playlist/add-file", payload),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["playlist", playListId],
-      });
+      await invalidatePlaylist();
     },
   });
 
@@ -126,8 +132,6 @@ const PlaylistItem = () => {
     const next = [...arr];
     const [removed] = next.splice(from, 1);
     next.splice(to, 0, removed);
-
-    // keep playOrder consistent with UI order (1-based)
     return next.map((it, idx) => ({ ...it, playOrder: idx + 1 }));
   };
 
@@ -140,7 +144,7 @@ const PlaylistItem = () => {
         dragFromIndexRef.current = index;
       },
       onDragOver: (e: React.DragEvent<HTMLTableRowElement>) => {
-        e.preventDefault(); // allow drop
+        e.preventDefault();
       },
       onDrop: () => {
         const from = dragFromIndexRef.current;
@@ -199,20 +203,16 @@ const PlaylistItem = () => {
       {
         header: "Thumbnail",
         key: "thumbnail",
-        render: (item: any) =>
-          (item.url && item.type.split("/")[0] === "image") ? (
-            <Image
-              src={item.url}
-              alt={item.name}
-              width={500}
-              height={500}
-              className="rounded-lg h-[50px] w-[70px] object-cover"
-            />
-          ) : (
-            <div className="bg-gray-200 rounded-lg h-[50px] w-[70px] flex items-center justify-center text-gray-500">
-              N/A
-            </div>
-          ),
+        render: (item: any) => (
+          <RenderThumbnail
+            thumbnail={
+              item.type?.startsWith("image/") ? item.url || null : null
+            }
+            alt={item.name}
+            type={item.type === "subPlaylist" ? "subPlaylist" : "file"}
+            fileType={item.type}
+          />
+        ),
       },
       {
         header: "Name",
@@ -304,7 +304,12 @@ const PlaylistItem = () => {
                 },
                 {
                   label: "Duplicate",
-                  onClick: () => duplicateItem(item.playlistFileId),
+                  onClick: () =>
+                    duplicateItem({
+                      playlistId: playListId,
+                      fileId: item.fileId,
+                      duration: item.duration,
+                    }),
                 },
                 {
                   label: "Delete",
@@ -317,7 +322,14 @@ const PlaylistItem = () => {
         ),
       },
     ],
-    [checkedItems, router, reorderMode, items.length],
+    [
+      checkedItems,
+      router,
+      reorderMode,
+      items.length,
+      playListId,
+      duplicateItem,
+    ],
   );
 
   return (
@@ -350,6 +362,7 @@ const PlaylistItem = () => {
           />
         </div>
       )}
+
       {isEmpty(playlist?.items) ? (
         <EmptyState
           image="/emptyFolder.svg"
@@ -358,7 +371,7 @@ const PlaylistItem = () => {
         />
       ) : (
         <Table
-          data={reorderMode ? playlist.items : items}
+          data={reorderMode ? items : playlist.items}
           columns={columns}
           maxHeight="h-auto"
           getRowProps={getRowProps}
