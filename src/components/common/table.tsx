@@ -112,7 +112,6 @@ export default function Table<T>({
   tbodyClassName = "",
   emptyMessage = "",
 
-  // ✅ new
   showEmpty = false,
   loading = false,
   error = false,
@@ -134,7 +133,7 @@ export default function Table<T>({
   containerRef,
   getRowProps,
 }: Props<T>) {
-  // ✅ Loading state
+  
   if (loading) {
     return (
       <StateCard
@@ -145,7 +144,6 @@ export default function Table<T>({
     );
   }
 
-  // ✅ Error state (NO message)
   if (error) {
     return (
       <StateCard imgSrc={errorImgSrc} title={errorTitle}>
@@ -162,7 +160,6 @@ export default function Table<T>({
     );
   }
 
-  // ✅ Empty state (optional)
   if (showEmpty && isEmpty(data)) {
     return (
       <StateCard
@@ -173,7 +170,6 @@ export default function Table<T>({
     );
   }
 
-  // If empty state is disabled, render an empty container (or you can return null)
   if (isEmpty(data)) {
     return null;
   }

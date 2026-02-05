@@ -1,23 +1,25 @@
-import React from "react";
+import { useState } from "react";
 import MiniCalendar from "./miniCalendar";
 
 export default function SidebarCalendarCard() {
+  const [value, setValue] = useState<Date>(new Date(2025, 9, 10));
+  const [activeStartDate, setActiveStartDate] = useState<Date>(new Date(2025, 9, 1));
+
+  const goPrev = () => setActiveStartDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+  const goNext = () => setActiveStartDate((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1));
+
+  const onChange = (date: Date) => {
+    setValue(date);
+    setActiveStartDate(new Date(date.getFullYear(), date.getMonth(), 1));
+  };
+
   return (
-    <div className="rounded-2xl border border-black/10 bg-white shadow-[0_6px_18px_rgba(17,24,39,0.06)]">
-      <div className="flex items-center justify-between px-4 py-3 text-sm font-bold text-black/80">
-        <span>October 2025</span>
-        <div className="flex gap-2 text-black/50">
-          <span className="grid h-6 w-6 place-items-center rounded-lg border border-black/10 bg-white">
-            ‹
-          </span>
-          <span className="grid h-6 w-6 place-items-center rounded-lg border border-black/10 bg-white">
-            ›
-          </span>
-        </div>
-      </div>
-      <div className="p-4">
-        <MiniCalendar year={2025} monthIndex={9} selectedDay={10} />
-      </div>
-    </div>
+    <MiniCalendar
+      value={value}
+      activeStartDate={activeStartDate}
+      onChange={onChange}
+      onPrevMonth={goPrev}
+      onNextMonth={goNext}
+    />
   );
 }
