@@ -146,3 +146,129 @@ export type PlayerQueryParams = {
   sortOrder?: SortOrder;
   status?: PlayerStatus | null;
 };
+
+export type ActivityApiItem = {
+  id: string;
+  type: "ONLINE" | "OFFLINE";
+  playerId: number;
+  playerName: string;
+  at: string;
+  message: string;
+};
+
+export type FolderLogsSortBy = "lastPlayed" | "totalRunTime" | "devices" | "plays" | "name";
+
+export type FolderLogsParams = {
+  search?: string;
+  sortBy?: FolderLogsSortBy;
+  sortOrder?: SortOrder;
+  date?: string;
+  offset?: number;
+  limit?: number;
+};
+
+export type FolderLogItem = {
+  folderId: number;
+  folderName: string;
+  thumbnail: string;
+  lastPlayedAt: string | null;
+  totalRunTimeSec: number;
+  devices: number;
+  plays: number;
+};
+
+export type FolderLogsResponse = {
+  message: string;
+  items: FolderLogItem[];
+  pagination?: {
+    total: number;
+    offset: number;
+    limit: number;
+    hasMore: boolean;
+  };
+};
+
+export type FileLogsSortBy = "lastPlayed" | "totalRunTime" | "devices" | "plays" | "name";
+
+export type FileLogsParams = {
+  date?: string;
+  search?: string;
+  sortBy?: FileLogsSortBy;
+  sortOrder?: SortOrder;
+  offset?: number;
+  limit?: number;
+};
+
+export type FileLogItem = {
+  fileId: number;
+  fileName: string;
+  fileType: string;
+  folderId: number;
+  folderName: string;
+  signedUrl: string;
+  lastPlayedAt: string | null;
+  totalRunTimeSec: number;
+  devices: number;
+  plays: number;
+};
+
+export type FileLogsResponse = {
+  message: string;
+  items: FileLogItem[];
+  pagination: { total: number; offset: number; limit: number; hasMore: boolean };
+  meta: {
+    sortBy: FileLogsSortBy;
+    sortOrder: SortOrder;
+    search: string | null;
+    date: { start: string; end: string } | null;
+  };
+};
+
+export type PlaylistFilesLogsSortBy = "lastPlayed" | "totalRunTime" | "devices" | "plays" | "name";
+
+export type PlaylistFilesLogsItem = {
+  playlistFileId: number;
+  playlistId: number;
+  playlistName: string;
+  playOrder: number;
+  isSubPlaylist: boolean;
+  fileId: number | null;
+  fileName: string | null;
+  fileType: string | null;
+  signedUrl: string;
+  subPlaylistId: number | null;
+  subPlaylistName: string | null;
+  lastPlayedAt: string | null;
+  totalRunTimeSec: number;
+  devices: number;
+  plays: number;
+};
+
+export type PlaylistFilesLogsResponse = {
+  items: PlaylistFilesLogsItem[];
+  pagination: { total: number; offset: number; limit: number; hasMore: boolean };
+};
+
+export type PlaylistLogSortBy = "lastPlayed" | "totalRunTime" | "devices" | "plays" | "name";
+
+export type PlaylistLogsParams = {
+  search?: string;
+  sortBy?: PlaylistLogSortBy;
+  sortOrder?: SortOrder;
+  date?: string;
+};
+
+export type PlaylistLogItem = {
+  playlistId: number;
+  playlistName: string;
+  lastPlayedAt: string | null;
+  totalRunTimeSec: number;
+  devices: number;
+  plays: number;
+};
+
+export type PlaylistLogsResponse = {
+  message: string;
+  items: PlaylistLogItem[];
+  pagination: { total: number; offset: number; limit: number; hasMore: boolean };
+};

@@ -5,6 +5,7 @@ import { Pie } from "react-chartjs-2";
 import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "@/src/helpers/axios";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import { it } from "node:test";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -17,13 +18,19 @@ type TopClientItem = {
 };
 
 export default function ClientsPieCard({ date }: Props) {
-  const { data: items } = useQuery({
+  const {
+    data: items,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["analytics", "top-clients", date],
     queryFn: () =>
       axiosInstance
         .get("/analytics/top-clients", { params: { date } })
         .then((r) => r.data.items as TopClientItem[]),
   });
+
+  const hasData = (Array.isArray(items) && items.length > 0) ? items.some((x) => x.adsPlayed > 0) : false;
 
   const chart = useMemo(() => {
     const list = items ?? [];
@@ -37,7 +44,7 @@ export default function ClientsPieCard({ date }: Props) {
           data: values,
           backgroundColor: ["#ff6a00", "#ff8a3d", "#ffb07a", "#ffd1b3", "#ffe3d3"],
           borderWidth: 0,
-          spacing: 3,
+          spacing: 0,
         },
       ],
     };
@@ -46,7 +53,7 @@ export default function ClientsPieCard({ date }: Props) {
   const options: any = {
     plugins: {
       legend: { display: false },
-      tooltip: { enabled: true },
+      tooltip: { enabled: hasData },
     },
   };
 
@@ -55,10 +62,30 @@ export default function ClientsPieCard({ date }: Props) {
       <div className="flex items-center justify-center px-4 py-3 text-sm font-semibold text-black/80">
         Clients
       </div>
+
       <div className="grid min-h-[260px] place-items-center p-3 pb-8">
-        <div className="h-[220px] w-[220px]">
-          <Pie data={chart} options={options} />
-        </div>
+        {isLoading ? (
+          <div className="grid place-items-center text-center">
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-black/10 border-t-black/40" />
+            <div className="mt-3 text-sm text-black/60">Loading…</div>
+          </div>
+        ) : isError ? (
+          <div className="grid place-items-center text-center">
+            <div className="text-sm font-semibold text-black/80">Couldn&apos;t load</div>
+            <div className="mt-1 text-xs text-black/50">Please try again.</div>
+          </div>
+        ) : !hasData ? (
+          <div className="grid place-items-center text-center px-6">
+            <div className="text-sm font-semibold text-black/80">No data</div>
+            <div className="mt-1 text-xs text-black/50">
+              There are no plays in the selected date range.
+            </div>
+          </div>
+        ) : (
+          <div className="h-[220px] w-[220px]">
+            <Pie data={chart} options={options} />
+          </div>
+        )}
       </div>
     </div>
   );

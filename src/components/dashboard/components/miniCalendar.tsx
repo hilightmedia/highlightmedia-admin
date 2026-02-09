@@ -16,8 +16,17 @@ type MiniCalendarProps = {
 
 type CalendarValue = CalendarProps["value"];
 
-function MiniCalendar({ value, activeStartDate, onChange, onPrevMonth, onNextMonth }: MiniCalendarProps) {
-  const monthLabel = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(activeStartDate);
+function MiniCalendar({
+  value,
+  activeStartDate,
+  onChange,
+  onPrevMonth,
+  onNextMonth,
+}: MiniCalendarProps) {
+  const monthLabel = new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    year: "numeric",
+  }).format(activeStartDate);
 
   return (
     <div className="rounded-2xl border border-black/10 bg-white shadow-[0_6px_18px_rgba(17,24,39,0.06)]">
@@ -43,7 +52,7 @@ function MiniCalendar({ value, activeStartDate, onChange, onPrevMonth, onNextMon
         </div>
       </div>
 
-      <div className="p-4">
+      <div className="mini-calendar rounded-2xl  p-4 bg-white">
         <Calendar
           value={value}
           onChange={(v: CalendarValue) => {
@@ -58,7 +67,9 @@ function MiniCalendar({ value, activeStartDate, onChange, onPrevMonth, onNextMon
           calendarType="gregory"
           minDetail="month"
           maxDetail="month"
-          formatShortWeekday={(_, date) => ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"][date.getDay()]}
+          formatShortWeekday={(_, date) =>
+            ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"][date.getDay()]
+          }
           formatDay={(_, date) => String(date.getDate())}
           tileClassName={({ date, view }) => {
             if (view !== "month") return "";
@@ -66,24 +77,13 @@ function MiniCalendar({ value, activeStartDate, onChange, onPrevMonth, onNextMon
               date.getFullYear() === value.getFullYear() &&
               date.getMonth() === value.getMonth() &&
               date.getDate() === value.getDate();
+
             return cn(
-              "h-7 w-7 rounded-xl border text-xs font-semibold",
-              "border-black/10 bg-white text-black/80",
-              isSelected && "border-[#ff6a00] bg-[#ff6a00] text-white p-0"
+              "h-7 w-7 rounded-sm text-xs font-semibold",
+              "bg-white text-black/80",
+              isSelected && "bg-[#ff6a00] text-white",
             );
           }}
-          className={cn(
-            "w-full border-0 bg-transparent p-0",
-            "[&_.react-calendar__navigation]:hidden",
-            "[&_.react-calendar__month-view__weekdays]:mb-2 [&_.react-calendar__month-view__weekdays]:grid [&_.react-calendar__month-view__weekdays]:grid-cols-7 [&_.react-calendar__month-view__weekdays]:gap-1.5",
-            "[&_.react-calendar__month-view__weekdays__weekday]:text-center [&_.react-calendar__month-view__weekdays__weekday]:text-[11px] [&_.react-calendar__month-view__weekdays__weekday]:font-extrabold [&_.react-calendar__month-view__weekdays__weekday]:text-black/40",
-            "[&_.react-calendar__month-view__weekdays__weekday_abbr]:no-underline",
-            "[&_.react-calendar__month-view__days]:grid [&_.react-calendar__month-view__days]:grid-cols-7 [&_.react-calendar__month-view__days]:gap-1.5",
-            "[&_.react-calendar__tile]:p-0 [&_.react-calendar__tile]:leading-none [&_.react-calendar__tile]:grid [&_.react-calendar__tile]:place-items-center",
-            "[&_.react-calendar__tile--now]:bg-white [&_.react-calendar__tile--now]:text-black/80",
-            "[&_.react-calendar__month-view__days__day--neighboringMonth]:invisible [&_.react-calendar__month-view__days__day--neighboringMonth]:pointer-events-none",
-            "[&_.react-calendar__tile:enabled:hover]:bg-white [&_.react-calendar__tile:enabled:focus]:bg-white"
-          )}
         />
       </div>
     </div>

@@ -53,7 +53,7 @@ const Dashboard = () => {
   const [sortBy, setSortBy] = useState<SortBy>("default");
 
   const { data: summaryRes } = useQuery({
-    queryKey: ["analytics", "summary"],
+    queryKey: ["analytics", "summary", selectedDate],
     queryFn: () =>
       axiosInstance
         .get("/analytics/summary")
@@ -81,7 +81,9 @@ const Dashboard = () => {
       sessionStart: s.sessionStart ? formatTime(s.sessionStart) : "-",
       sessionEnd: s.sessionEnd ? formatTime(s.sessionEnd) : "-",
       status: s.status,
-      lastActive: s.lastActive ? `${formatDate(s.lastActive)} ${formatTime(s.lastActive)}` : "-",
+      lastActive: s.lastActive
+        ? `${formatDate(s.lastActive)} ${formatTime(s.lastActive)}`
+        : "-",
       duration: formatSeconds(s.sessionDurationSec),
     }));
   }, [sessionsRes]);
@@ -124,16 +126,31 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="mx-auto w-full max-w-[1240px] p-4 overflow-x-hidden">
-      <div className="mt-4 grid w-full min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div className="mx-auto w-full max-w-[1200px] p-4 overflow-x-hidden">
+      <div className="mt-4 grid w-full min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="w-full min-w-0">
           <div className="grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard primary value={String(summaryRes?.totalFolders ?? 0)} label="Clients" />
+            <StatCard
+              primary
+              value={String(summaryRes?.totalFolders ?? 0)}
+              label="Clients"
+            />
             <StatCard value={String(summaryRes?.online ?? 0)} label="Online" />
-            <StatCard value={String(summaryRes?.offline ?? 0)} label="Offline" />
-            <StatCard value={String(summaryRes?.players ?? 0)} label="Players" />
+            <StatCard
+              value={String(summaryRes?.offline ?? 0)}
+              label="Offline"
+            />
+            <StatCard
+              value={String(summaryRes?.players ?? 0)}
+              label="Players"
+            />
           </div>
-
+          <div className="w-full xs:block xl:hidden mt-10">
+            <SidebarCalendarCard
+              value={selectedDate}
+              onChange={setSelectedDate}
+            />
+          </div>
           <div className="mt-10 grid w-full min-w-0 grid-cols-1 gap-4 md:grid-cols-[minmax(0,360px)_minmax(0,1fr)] xl:grid-cols-1 2xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
             <div className="min-w-0 w-full">
               <ClientsPieCard date={selectedDate} />
@@ -174,12 +191,14 @@ const Dashboard = () => {
         </div>
 
         <div className="w-full min-w-0 flex flex-col gap-4">
-          <SidebarCalendarCard
-            // value={selectedDate}
-            // onChange={(d: string) => setSelectedDate(d)}
-          />
-          <AlertsCard  />
-          <RecentActivityCard  />
+          <div className="w-full xs:hidden xl:block">
+            <SidebarCalendarCard
+              value={selectedDate}
+              onChange={setSelectedDate}
+            />
+          </div>
+          <AlertsCard />
+          <RecentActivityCard />
         </div>
       </div>
     </div>

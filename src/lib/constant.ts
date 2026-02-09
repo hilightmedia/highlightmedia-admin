@@ -1,4 +1,4 @@
-import { SelectOption } from "@/types/types";
+import { FileLogsSortBy, FolderLogsSortBy, SelectOption, SortOrder } from "@/types/types";
 import {
   PlayCircle,
   Bell,
@@ -24,7 +24,6 @@ export const menu = [
       { name: "Media Logs", path: "/play-logs/media" },
       { name: "Playlist Logs", path: "/play-logs/playlist" },
       { name: "Player Logs", path: "/play-logs/player" },
-      { name: "Client Logs", path: "/play-logs/client" },
     ],
   },
 
@@ -129,4 +128,58 @@ export const PlayersSortOptions = [
   { label: "Status (asc)", value: "status:asc" },
   { label: "Name (A-Z)", value: "name:asc" },
   { label: "Name (Z-A)", value: "name:desc" },
+];
+
+
+export const FolderLogsSortOptions: { label: string; value: `${FolderLogsSortBy}:${SortOrder}` }[] =
+  [
+    { label: "Last Played (Desc)", value: "lastPlayed:desc" },
+    { label: "Last Played (Asc)", value: "lastPlayed:asc" },
+    { label: "Total Run Time (Desc)", value: "totalRunTime:desc" },
+    { label: "Total Run Time (Asc)", value: "totalRunTime:asc" },
+    { label: "Devices (Desc)", value: "devices:desc" },
+    { label: "Devices (Asc)", value: "devices:asc" },
+    { label: "Plays (Desc)", value: "plays:desc" },
+    { label: "Plays (Asc)", value: "plays:asc" },
+    { label: "Name (A → Z)", value: "name:asc" },
+    { label: "Name (Z → A)", value: "name:desc" },
+  ];
+
+  export const FileLogsSortOptions: { label: string; value: `${FileLogsSortBy}:${SortOrder}` }[] = [
+  { label: "Last Played (Desc)", value: "lastPlayed:desc" },
+  { label: "Last Played (Asc)", value: "lastPlayed:asc" },
+  { label: "Total Run Time (Desc)", value: "totalRunTime:desc" },
+  { label: "Total Run Time (Asc)", value: "totalRunTime:asc" },
+  { label: "Devices (Desc)", value: "devices:desc" },
+  { label: "Devices (Asc)", value: "devices:asc" },
+  { label: "Plays (Desc)", value: "plays:desc" },
+  { label: "Plays (Asc)", value: "plays:asc" },
+  { label: "Name (A → Z)", value: "name:asc" },
+  { label: "Name (Z → A)", value: "name:desc" },
+];
+
+export const PlayListFileLogsSortOptions = [
+  { label: "Last Played (Desc)", value: "lastPlayed:desc" },
+  { label: "Last Played (Asc)", value: "lastPlayed:asc" },
+  { label: "Total Run Time (Desc)", value: "totalRunTime:desc" },
+  { label: "Total Run Time (Asc)", value: "totalRunTime:asc" },
+  { label: "Devices (Desc)", value: "devices:desc" },
+  { label: "Devices (Asc)", value: "devices:asc" },
+  { label: "Plays (Desc)", value: "plays:desc" },
+  { label: "Plays (Asc)", value: "plays:asc" },
+  { label: "Name (A → Z)", value: "name:asc" },
+  { label: "Name (Z → A)", value: "name:desc" },
+];
+
+export const PlayListLogsSortOptions = [
+  { label: "Last Played (Desc)", value: "lastPlayed:desc" },
+  { label: "Last Played (Asc)", value: "lastPlayed:asc" },
+  { label: "Total Run Time (Desc)", value: "totalRunTime:desc" },
+  { label: "Total Run Time (Asc)", value: "totalRunTime:asc" },
+  { label: "Devices (Desc)", value: "devices:desc" },
+  { label: "Devices (Asc)", value: "devices:asc" },
+  { label: "Plays (Desc)", value: "plays:desc" },
+  { label: "Plays (Asc)", value: "plays:asc" },
+  { label: "Name (A → Z)", value: "name:asc" },
+  { label: "Name (Z → A)", value: "name:desc" },
 ];
