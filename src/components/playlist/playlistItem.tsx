@@ -1,6 +1,5 @@
 import { GripVertical } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import Image from "next/image";
 import { useRouter } from "next/router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
@@ -26,8 +25,9 @@ import PopupConfirm from "../common/popupConfirm";
 import { isEmpty } from "lodash";
 import EmptyState from "../common/emptyState";
 import { RenderThumbnail } from "../common/thumb";
+import EditDuration from "./components/editDuration";
 
-type ConfirmState = { open: boolean; id: number | null };
+type ConfirmState = { open: boolean; id: number | null, duration?: number };
 
 const PlaylistItem = () => {
   const router = useRouter();
@@ -56,6 +56,12 @@ const PlaylistItem = () => {
     id: null,
   });
 
+  const [editDurationOpen, setEditDurationOpen] = useState<ConfirmState>({
+    open: false,
+    id: null,
+    duration: 0,
+  });
+
   const initialMoveState = { id: 0, name: "", playOrder: 1, length: 0 };
   const [moveOpen, setMoveOpen] = useState<MoveToType>(initialMoveState);
 
@@ -72,9 +78,13 @@ const PlaylistItem = () => {
 
   const tableRef = useRef<HTMLDivElement | null>(null);
 
-  const { data: playlist, isLoading } = useQuery({
-    queryKey,
-    enabled,
+  const {
+    data: playlist,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: queryKey,
+    enabled: enabled,
     queryFn: async () => {
       const res = await axiosInstance.get(`/playlist/${playListId}`, {
         params: { ...params, search: debouncedSearch },
@@ -174,6 +184,10 @@ const PlaylistItem = () => {
       className: "cursor-grab active:cursor-grabbing",
     } as React.HTMLAttributes<HTMLTableRowElement>;
   };
+  const getPlaylistFileId = (row: any) =>
+    Number(row?.playlistFileId ?? row?.id);
+
+  console.log(editDurationOpen, "editDurationOpen");
 
   const columns = useMemo(
     () => [
@@ -181,24 +195,28 @@ const PlaylistItem = () => {
         header: "",
         key: "selectOrDrag",
         cellClassName: "p-0 text-center w-[48px]",
-        render: (item: any) =>
-          reorderMode ? (
+        render: (item: any) => {
+          const pfId = getPlaylistFileId(item);
+          const checked = checkedItems.includes(pfId);
+
+          return reorderMode ? (
             <div className="w-full flex items-center justify-center text-[#EA6535]">
               <GripVertical size={18} />
             </div>
           ) : (
             <Checkbox
               className="border-[#EA6535]"
-              checked={checkedItems.includes(item.id)}
-              onCheckedChange={(checked) => {
+              checked={checked}
+              onCheckedChange={(next) => {
                 setCheckedItems((prev) =>
-                  checked
-                    ? [...prev, item.id]
-                    : prev.filter((id) => id !== item.id),
+                  next
+                    ? Array.from(new Set([...prev, pfId]))
+                    : prev.filter((id) => id !== pfId),
                 );
               }}
             />
-          ),
+          );
+        },
       },
       {
         header: "Thumbnail",
@@ -225,7 +243,6 @@ const PlaylistItem = () => {
               onClick={() => {
                 if (item.type === "subPlaylist")
                   router.push(`/playlist/${item.subPlaylistId}`);
-                else router.push(`/media/${item.fileId}`);
               }}
             >
               {item.name}
@@ -312,9 +329,18 @@ const PlaylistItem = () => {
                     }),
                 },
                 {
+                  label: "Edit Duration",
+                  onClick: () =>
+                    setEditDurationOpen({
+                      open: true,
+                      id: getPlaylistFileId(item),
+                      duration: item?.duration,
+                    }),
+                },
+                {
                   label: "Delete",
                   onClick: () =>
-                    setConfirmOpen({ open: true, id: item.playlistFileId }),
+                    setConfirmOpen({ open: true, id: getPlaylistFileId(item) }),
                 },
               ]}
             />
@@ -343,6 +369,7 @@ const PlaylistItem = () => {
         addFileOpen={addFileOpen}
         setAddFileOpen={setAddFileOpen}
         defaultDuration={playlist?.defaultDuration || 30}
+        refetchPlaylist={refetch}
       />
 
       {!isLoading && (
@@ -394,6 +421,15 @@ const PlaylistItem = () => {
         onClose={() => setMoveOpen(initialMoveState)}
         file={moveOpen}
         playlistId={playListId}
+      />
+      <EditDuration
+        open={editDurationOpen.open}
+        onClose={() => {
+          setEditDurationOpen({ open: false, id: null, duration: 0 });
+        }}
+        defaultDurationSec={editDurationOpen.duration ?? 0}
+        playlistFileId={editDurationOpen.id ?? 0}
+        refetchPlaylist={refetch}
       />
     </section>
   );

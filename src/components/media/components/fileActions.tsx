@@ -1,19 +1,18 @@
 import { Search, Upload } from "lucide-react";
 
 import React from "react";
-import {
-  FileParams,
-  SortBy,
-  SortOrder,
-} from "@/types/types";
-import {  FileBulkActions, FilesSortOptions } from "@/src/lib/constant";
+import { FileParams, SortBy, SortOrder } from "@/types/types";
+import { FileBulkActions, FilesSortOptions } from "@/src/lib/constant";
 import UploadFile from "./uploadFile";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import FileFiltersDialog from "./fileFilterOptions";
 import Button from "../../common/button";
 import { FilterIconOutlined } from "../../common/icon";
 import { Input } from "../../common/input";
 import Select from "../../common/select";
+import PopupConfirm from "../../common/popupConfirm";
+import axiosInstance from "@/src/helpers/axios";
+import AddFilesToPlaylistsDialog from "./addFilesToPlaylistsDialog";
 
 interface Props {
   folderId: number;
@@ -36,7 +35,35 @@ export default function FileActions({
 }: Props) {
   const [filtersOpen, setFiltersOpen] = React.useState(false);
   const [bulkAction, setBulkAction] = React.useState("");
+
+  const [addToPlaylistOpen, setAddToPlaylistOpen] = React.useState(false);
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
   const queryClient = useQueryClient();
+
+  const { mutate: bulkDelete, isPending } = useMutation({
+    mutationFn: () =>
+      axiosInstance.post(`/media/bulk/delete-file`, { fileIds: checkedItems }),
+    onSuccess: async () => {
+      setCheckedItems([]);
+      setBulkAction("");
+      await queryClient.invalidateQueries({ queryKey: ["media"] });
+    },
+  });
+
+  const handleApply = () => {
+    if (!bulkAction) return;
+
+    if (bulkAction === "delete") setConfirmOpen(true);
+    if (bulkAction === "addToPlaylist") setAddToPlaylistOpen(true);
+  };
+
+  const handleDelete = () => {
+    if (confirmOpen) {
+      bulkDelete();
+      setConfirmOpen(false);
+    }
+  };
+
   return (
     <>
       <div className="grid grid-cols-6 md:grid-cols-12 gap-6 items-center">
@@ -63,7 +90,11 @@ export default function FileActions({
             disabled={!checkedItems.length}
           />
         </div>
-        <Button className="button-gradient px-6 col-span-2 md:col-span-3" disabled={!checkedItems.length}>
+        <Button
+          className="button-gradient px-6 col-span-2 md:col-span-3"
+          disabled={!checkedItems.length}
+          onClick={handleApply}
+        >
           Apply
         </Button>
 
@@ -84,7 +115,7 @@ export default function FileActions({
             onChange={(val) => {
               const [sortBy, sortOrder] = String(val).split(":") as [
                 SortBy,
-                SortOrder
+                SortOrder,
               ];
               setParams((p: any) => ({ ...p, sortBy, sortOrder }));
             }}
@@ -130,6 +161,28 @@ export default function FileActions({
             fileType: null,
           }))
         }
+      />
+      <PopupConfirm
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleDelete}
+        title="Move to Trash"
+        message="Are you sure you want to move the files to trash?"
+        confirmText="Delete"
+        loading={isPending}
+      />
+      <AddFilesToPlaylistsDialog
+        open={addToPlaylistOpen}
+        onClose={() => {
+          setAddToPlaylistOpen(false);
+          setBulkAction("");
+        }}
+        fileIds={Array.isArray(checkedItems) ? checkedItems.map(Number) : []}
+        onAdded={() => {
+          setCheckedItems([]);
+          setBulkAction("");
+          queryClient.invalidateQueries({ queryKey: ["media"] });
+        }}
       />
     </>
   );

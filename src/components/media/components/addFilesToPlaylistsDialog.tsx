@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,7 +17,7 @@ import Image from "next/image";
 import Checkbox from "../../common/checkBox";
 import Button from "../../common/button";
 import { Input } from "../../common/input";
-import { formatSeconds } from "@/src/lib/util";
+import { formatBytes, formatSeconds } from "@/src/lib/util";
 
 type PlaylistRow = {
   id: number;
@@ -29,16 +31,14 @@ type PlaylistRow = {
 type Props = {
   open: boolean;
   onClose: () => void;
-  playlistId: number;
-  defaultDurationSec?: number;
+  fileIds: number[];
   onAdded?: () => void;
 };
 
-export default function AddSubPlaylistsToPlaylistDialog({
+export default function AddFilesToPlaylistsDialog({
   open,
   onClose,
-  playlistId,
-  defaultDurationSec = 10,
+  fileIds,
   onAdded,
 }: Props) {
   const [search, setSearch] = React.useState("");
@@ -60,21 +60,11 @@ export default function AddSubPlaylistsToPlaylistDialog({
         .then((res) => (res.data.playlists ?? []) as PlaylistRow[]),
   });
 
-  const byId = React.useMemo(() => {
-    const m = new Map<number, PlaylistRow>();
-    for (const p of playlists) m.set(p.id, p);
-    return m;
-  }, [playlists]);
-
   const filtered = React.useMemo(() => {
     const s = search.trim().toLowerCase();
-    let list = playlists;
-
-    list = list.filter((p) => p.id !== playlistId);
-
-    if (!s) return list;
-    return list.filter((p) => p.name.toLowerCase().includes(s));
-  }, [playlists, search, playlistId]);
+    if (!s) return playlists;
+    return playlists.filter((p) => p.name.toLowerCase().includes(s));
+  }, [playlists, search]);
 
   const allSelectedOnPage =
     filtered.length > 0 && filtered.every((p) => checkedIds.includes(p.id));
@@ -87,24 +77,15 @@ export default function AddSubPlaylistsToPlaylistDialog({
     });
   };
 
-  const getDurationForSubPlaylist = (id: number) => {
-    const p = byId.get(id);
-    const d = Number(p?.durationSec ?? 0);
-    return Number.isFinite(d) && d > 0 ? Math.floor(d) : defaultDurationSec;
-  };
-
   const { mutate, isPending } = useMutation({
-    mutationFn: (subIds: number[]) =>
-      axiosInstance.post(`/playlist/${playlistId}/bulk-add-sub-playlists`, {
-        playlistId,
-        items: subIds.map((id) => ({
-          subPlaylistId: id,
-          duration: getDurationForSubPlaylist(id),
-        })),
+    mutationFn: (playlistIds: number[]) =>
+      axiosInstance.post(`/media/bulk-add-files-to-playlists`, {
+        fileIds,
+        playlistIds,
       }),
     onSuccess: () => {
       onAdded?.();
-      queryClient.invalidateQueries({ queryKey: ["playlist", playlistId] });
+      queryClient.invalidateQueries({ queryKey: ["playlists"] });
       onClose();
     },
   });
@@ -126,9 +107,7 @@ export default function AddSubPlaylistsToPlaylistDialog({
           checked={checkedIds.includes(item.id)}
           onCheckedChange={(checked) => {
             setCheckedIds((prev) =>
-              checked
-                ? [...prev, item.id]
-                : prev.filter((id) => id !== item.id),
+              checked ? [...prev, item.id] : prev.filter((id) => id !== item.id),
             );
           }}
         />
@@ -153,7 +132,7 @@ export default function AddSubPlaylistsToPlaylistDialog({
         ),
     },
     {
-      header: "SubPlaylist Name",
+      header: "Playlist Name",
       key: "name",
       render: (item: PlaylistRow) => (
         <div className="flex flex-col">
@@ -175,16 +154,18 @@ export default function AddSubPlaylistsToPlaylistDialog({
       key: "playlistSize",
       render: (item: PlaylistRow) => (
         <div className="flex flex-col">
-          <span className="font-medium text-gray-7">{item.playlistSize} MB</span>
+          <span className="font-medium text-gray-7">{formatBytes(Number(item.playlistSize))}</span>
         </div>
       ),
     },
     {
-      header: "Duration (sec)",
+      header: "Duration",
       key: "durationSec",
       render: (item: PlaylistRow) => (
         <div className="flex flex-col">
-          <span className="font-medium text-gray-7">{formatSeconds(item.durationSec)}</span>
+          <span className="font-medium text-gray-7">
+            {formatSeconds(item.durationSec)}
+          </span>
         </div>
       ),
     },
@@ -194,16 +175,13 @@ export default function AddSubPlaylistsToPlaylistDialog({
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="max-w-[860px] w-[92%] rounded-xl p-6 gap-4 bg-white">
         <DialogHeader className="flex flex-col gap-2">
-          <DialogTitle className="text-left">Add SubPlaylists</DialogTitle>
+          <DialogTitle className="text-left">Add Files to Playlists</DialogTitle>
           <DialogDescription className="font-normal">
-            Select one or more playlists to add as subplaylists.
+            Select one or more playlists to add {fileIds.length} selected file
+            {fileIds.length === 1 ? "" : "s"}.
           </DialogDescription>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute top-5 right-5"
-          >
+          <button type="button" onClick={onClose} className="absolute top-5 right-5">
             <X />
           </button>
         </DialogHeader>
@@ -226,7 +204,7 @@ export default function AddSubPlaylistsToPlaylistDialog({
 
         <div className="flex items-center justify-between gap-3">
           <div className="text-sm text-gray-600">
-            Selected:{" "}
+            Selected playlists:{" "}
             <span className="font-medium text-gray-900">{checkedIds.length}</span>
           </div>
 
@@ -242,10 +220,10 @@ export default function AddSubPlaylistsToPlaylistDialog({
             <Button
               type="button"
               className="rounded-lg"
-              disabled={checkedIds.length === 0 || isPending}
+              disabled={checkedIds.length === 0 || isPending || fileIds.length === 0}
               onClick={() => mutate(checkedIds)}
             >
-              {isPending ? "Adding..." : "Add SubPlaylists"}
+              {isPending ? "Adding..." : "Add Files"}
             </Button>
           </div>
         </div>

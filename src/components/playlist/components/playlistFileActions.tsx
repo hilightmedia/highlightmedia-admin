@@ -1,12 +1,17 @@
 import { FolderPlusIcon, Plus, Search } from "lucide-react";
 
-import React from "react";
+import React, { useState } from "react";
 import { PlaylistFilesQueryParams, SortBy, SortOrder } from "@/types/types";
 import {
-  FolderBulkActions,
+  PlaylistFileBulkActions,
   PlaylistFilesSortOptions,
 } from "@/src/lib/constant";
-import { useQueryClient } from "@tanstack/react-query";
+import {
+  QueryObserverResult,
+  RefetchOptions,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import PlaylistFilesFiltersDialog from "./playlistFileFilters";
 import AddFilesToPlaylistDialog from "./addFile";
 import AddSubPlaylistsToPlaylistDialog from "./addSubPlaylist";
@@ -14,6 +19,11 @@ import Button from "../../common/button";
 import { Input } from "../../common/input";
 import Select from "../../common/select";
 import { FilterIconOutlined } from "../../common/icon";
+import axiosInstance from "@/src/helpers/axios";
+import PopupConfirm from "../../common/popupConfirm";
+import BulkEditDurationDialog from "./bulkEditDuration";
+import { isEmpty, set } from "lodash";
+import { ref } from "node:process";
 
 interface Props {
   playlistId: number;
@@ -24,6 +34,9 @@ interface Props {
   addFileOpen: boolean;
   setAddFileOpen: React.Dispatch<React.SetStateAction<boolean>>;
   defaultDuration: number;
+  refetchPlaylist: (
+    options?: RefetchOptions | undefined,
+  ) => Promise<QueryObserverResult<any, Error>>;
 }
 
 export default function PlaylistFileActions({
@@ -35,12 +48,39 @@ export default function PlaylistFileActions({
   addFileOpen,
   setAddFileOpen,
   defaultDuration,
+  refetchPlaylist,
 }: Props) {
   const [filtersOpen, setFiltersOpen] = React.useState(false);
   const [bulkAction, setBulkAction] = React.useState("");
 
   const [addSubPlaylistOpen, setAddSubPlaylistOpen] = React.useState(false);
-  const queryClient = useQueryClient();
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+
+  const [editDurationOpen, setEditDurationOpen] = useState(false);
+
+  const { mutate: bulkDelete, isPending: deleting } = useMutation({
+    mutationFn: async (playlistFileIds: number[]) =>
+      axiosInstance.post("/playlist/bulk-delete-files", { playlistFileIds }),
+    onSuccess: async () => {
+      setBulkAction("");
+      setCheckedItems([]);
+      setConfirmOpen(false);
+      refetchPlaylist();
+    },
+  });
+
+  const applyBulkAction = () => {
+    if (bulkAction === "delete") {
+      setConfirmOpen(true);
+      return;
+    }
+
+    if (bulkAction === "editDuration") {
+      setEditDurationOpen(true);
+      return;
+    }
+  };
+
   return (
     <>
       <div className="grid grid-cols-6 md:grid-cols-12 gap-6 items-center">
@@ -58,15 +98,20 @@ export default function PlaylistFileActions({
 
         <div className="col-span-3 md:col-span-3">
           <Select
-            options={FolderBulkActions}
+            options={PlaylistFileBulkActions}
             value={bulkAction}
             onChange={(val) => setBulkAction(val)}
             className="min-w-full rounded-lg "
             containerClassName="w-auto"
             iconClassName="text-gray-500"
+            disabled={!checkedItems.length}
           />
         </div>
-        <Button className="button-gradient px-6 col-span-2 md:col-span-3">
+        <Button
+          className="button-gradient px-6 col-span-2 md:col-span-3"
+          disabled={!bulkAction || isEmpty(checkedItems)}
+          onClick={applyBulkAction}
+        >
           Apply
         </Button>
 
@@ -157,6 +202,27 @@ export default function PlaylistFileActions({
         playlistId={playlistId}
         open={addSubPlaylistOpen}
         onClose={() => setAddSubPlaylistOpen(false)}
+      />
+      <PopupConfirm
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => bulkDelete(checkedItems)}
+        title="Delete Playlists Files"
+        message="Are you sure you want to delete selected playlists files?"
+        confirmText="Delete"
+        loading={deleting}
+      />
+      <BulkEditDurationDialog
+        open={editDurationOpen}
+        onClose={() => setEditDurationOpen(false)}
+        playlistFileIds={checkedItems}
+        defaultDurationSec={defaultDuration || 30}
+        onSuccess={async () => {
+          setCheckedItems([]);
+          setBulkAction("");
+          refetchPlaylist();
+          setEditDurationOpen(false);
+        }}
       />
     </>
   );

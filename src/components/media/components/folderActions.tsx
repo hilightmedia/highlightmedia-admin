@@ -1,5 +1,4 @@
 import { Search, FolderPlus } from "lucide-react";
-
 import React from "react";
 import FolderFiltersDialog from "./folderFilters";
 import {
@@ -14,6 +13,10 @@ import Button from "../../common/button";
 import { FilterIconOutlined } from "../../common/icon";
 import { Input } from "../../common/input";
 import Select from "../../common/select";
+import PopupConfirm from "../../common/popupConfirm";
+import axiosInstance from "@/src/helpers/axios";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import BulkEditFolderValidity from "./bulkFolderVaidity";
 
 interface Props {
   setCreateFolderOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -25,6 +28,13 @@ interface Props {
   setCheckedItems: React.Dispatch<React.SetStateAction<any>>;
 }
 
+const initialConfirmState = {
+  open: false,
+  action: "" as "" | "delete",
+  title: "",
+  message: "",
+};
+
 export default function FolderActions({
   setCreateFolderOpen,
   createFolderOpen,
@@ -35,6 +45,54 @@ export default function FolderActions({
 }: Props) {
   const [filtersOpen, setFiltersOpen] = React.useState(false);
   const [bulkAction, setBulkAction] = React.useState("");
+  const [bulkEditOpen, setBulkEditOpen] = React.useState(false);
+  const [confirmOpen, setConfirmOpen] = React.useState(initialConfirmState);
+  const queryClient = useQueryClient();
+
+  const ids = React.useMemo(() => {
+    const arr = Array.isArray(checkedItems) ? checkedItems : [];
+    return arr.map((x: any) => Number(x?.id ?? x)).filter(Number.isFinite);
+  }, [checkedItems]);
+
+  const { mutate: bulkDelete, isPending } = useMutation({
+    mutationFn: (folderIds: number[]) =>
+      axiosInstance.post(`/media/bulk/delete-folder`, { folderIds }),
+    onSuccess: async () => {
+      setCheckedItems([]);
+      setBulkAction("");
+      await queryClient.invalidateQueries({ queryKey: ["folders"] });
+    },
+  });
+
+  const handleApply = () => {
+    if (!ids.length || !bulkAction) return;
+
+    if (bulkAction === "delete") {
+      setConfirmOpen({
+        open: true,
+        action: "delete",
+        title: "Delete Folder",
+        message: "Are you sure you want to delete selected folders?",
+      });
+      return;
+    }
+
+    if (bulkAction === "edit") {
+      setBulkEditOpen(true);
+      return;
+    }
+  };
+
+  const handleConfirm = () => {
+    if (!ids.length) {
+      setConfirmOpen(initialConfirmState);
+      return;
+    }
+    bulkDelete(ids);
+    setConfirmOpen(initialConfirmState);
+  };
+
+  const loading = isPending;
 
   return (
     <>
@@ -59,16 +117,23 @@ export default function FolderActions({
             className="min-w-full rounded-lg "
             containerClassName="w-auto"
             iconClassName="text-gray-500"
-            disabled={!checkedItems.length}
+            disabled={!checkedItems.length || loading}
           />
         </div>
-        <Button className="button-gradient px-6 col-span-2 md:col-span-3" disabled={!checkedItems.length || !bulkAction}>Apply</Button>
+
+        <Button
+          className="button-gradient px-6 col-span-2 md:col-span-3"
+          disabled={!checkedItems.length || !bulkAction || loading}
+          onClick={handleApply}
+        >
+          Apply
+        </Button>
 
         <Button
           className="button-gradient px-6 col-span-6 md:col-span-3"
           onClick={() => setCreateFolderOpen(true)}
         >
-          <FolderPlus size={18}/>
+          <FolderPlus size={18} />
           Create Folder
         </Button>
 
@@ -81,7 +146,7 @@ export default function FolderActions({
             onChange={(val) => {
               const [sortBy, sortOrder] = String(val).split(":") as [
                 SortBy,
-                SortOrder
+                SortOrder,
               ];
               setParams((p: any) => ({ ...p, sortBy, sortOrder }));
             }}
@@ -98,10 +163,12 @@ export default function FolderActions({
           <FilterIconOutlined /> Filters
         </Button>
       </div>
+
       <CreateFolder
         open={createFolderOpen}
         onClose={() => setCreateFolderOpen(false)}
       />
+
       <FolderFiltersDialog
         open={filtersOpen}
         onClose={() => setFiltersOpen(false)}
@@ -123,6 +190,25 @@ export default function FolderActions({
             status: null,
           }))
         }
+      />
+
+      <PopupConfirm
+        open={confirmOpen.open}
+        onClose={() => setConfirmOpen(initialConfirmState)}
+        onConfirm={handleConfirm}
+        title={confirmOpen.title}
+        message={confirmOpen.message}
+        confirmText={"Delete"}
+        loading={loading}
+      />
+      <BulkEditFolderValidity
+        open={bulkEditOpen}
+        onClose={() => setBulkEditOpen(false)}
+        folderIds={ids}
+        onDone={() => {
+          setCheckedItems([]);
+          setBulkAction("");
+        }}
       />
     </>
   );

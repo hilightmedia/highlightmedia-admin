@@ -127,9 +127,9 @@ const Dashboard = () => {
 
   return (
     <div className="mx-auto w-full max-w-[1200px] p-4 overflow-x-hidden">
-      <div className="mt-4 grid w-full min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="mt-4 grid w-full min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="w-full min-w-0">
-          <div className="grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
               primary
               value={String(summaryRes?.totalFolders ?? 0)}
@@ -145,7 +145,7 @@ const Dashboard = () => {
               label="Players"
             />
           </div>
-          <div className="w-full xs:block xl:hidden mt-10">
+          <div className="w-full xs:block lg:hidden mt-10">
             <SidebarCalendarCard
               value={selectedDate}
               onChange={setSelectedDate}
@@ -191,7 +191,7 @@ const Dashboard = () => {
         </div>
 
         <div className="w-full min-w-0 flex flex-col gap-4">
-          <div className="w-full xs:hidden xl:block">
+          <div className="w-full xs:hidden lg:block">
             <SidebarCalendarCard
               value={selectedDate}
               onChange={setSelectedDate}

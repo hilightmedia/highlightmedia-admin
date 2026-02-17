@@ -66,14 +66,28 @@ export const FoldersSortOptions: SelectOption[] = [
 export const FolderBulkActions = [
   { label: "Bulk Actions", value: "" },
   { label: "Delete", value: "delete" },
-  { label: "Edit Validiy", value: "edit" },
+  { label: "Edit Validity", value: "edit" },
 ];
+
 
 export const FileBulkActions = [
   { label: "Bulk Actions", value: "" },
   { label: "Delete", value: "delete" },
-  { label: "Add to Playlist", value: "add" },
+  { label: "Add to Playlist", value: "addToPlaylist" },
 ];
+
+export const PlaylistBulkActions = [
+  { label: "Bulk Actions", value: "" },
+  { label: "Delete", value: "delete" },
+  { label: "Add Files", value: "add" },
+];
+
+export const PlaylistFileBulkActions = [
+  { label: "Bulk Actions", value: "" },
+  { label: "Delete", value: "delete" },
+  { label: "Edit Duration", value: "editDuration" },
+];
+
 
 export const FilesSortOptions: SelectOption[] = [
   { label: "Created (newest)", value: "createdAt:desc" },
