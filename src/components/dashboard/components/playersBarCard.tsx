@@ -97,12 +97,12 @@ export default function PlayersBarCard({ date }: Props) {
       </div>
       <div className="h-[260px] p-4 pb-6">
        { isLoading ? (
-          <div className="grid place-items-center text-center">
+          <div className="grid place-items-center w-full h-full text-center">
             <div className="h-10 w-10 animate-spin rounded-full border-2 border-black/10 border-t-black/40" />
             <div className="mt-3 text-sm text-black/60">Loading…</div>
           </div>
         ) : isError ? (
-          <div className="grid place-items-center text-center">
+          <div className="grid place-items-center w-full h-full text-center">
             <div className="text-sm font-semibold text-black/80">Couldn&apos;t load</div>
             <div className="mt-1 text-xs text-black/50">Please try again.</div>
           </div>) :

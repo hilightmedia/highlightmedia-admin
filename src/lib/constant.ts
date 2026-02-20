@@ -1,8 +1,8 @@
 import { FileLogsSortBy, FolderLogsSortBy, SelectOption, SortOrder } from "@/types/types";
 import {
   PlayCircle,
-  Bell,
-  Settings,
+  // Bell,
+  // Settings,
   Trash2,
 } from "lucide-react";
 import { MediaOutlined, PlaylistOutlined, PlayLogsOutlined,DashBoardOutlined } from "../components/common/icon";
@@ -22,14 +22,14 @@ export const menu = [
     icon: PlayLogsOutlined,
     children: [
       { name: "Media Logs", path: "/play-logs/media" },
-      { name: "Playlist Logs", path: "/play-logs/playlist" },
+      // { name: "Playlist Logs", path: "/play-logs/playlist" },
       { name: "Player Logs", path: "/play-logs/player" },
     ],
   },
 
   { name: "Players", path: "/players", icon: PlayCircle },
-  { name: "Notifications", path: "/notifications", icon: Bell },
-  { name: "Settings", path: "/settings", icon: Settings },
+  // { name: "Notifications", path: "/notifications", icon: Bell },
+  // { name: "Settings", path: "/settings", icon: Settings },
   { name: "Trash", path: "/trash", icon: Trash2 },
 ];
 

@@ -260,6 +260,13 @@ const PlaylistItem = () => {
         ),
       },
       {
+        header: "Folder",
+        key: "folder",
+        render: (item: any) => (
+          <span className="capitalize">{item?.folderName || "N/A"}</span>
+        ),
+      },
+      {
         header: "Item Details",
         key: "duration",
         cellClassName: "min-w-[180px]",
@@ -278,13 +285,13 @@ const PlaylistItem = () => {
           <span className="capitalize">{item?.playOrder ?? 0}</span>
         ),
       },
-      {
-        header: "Count",
-        key: "logsCount",
-        render: (item: any) => (
-          <span className="capitalize">{item?.logsCount ?? 0}</span>
-        ),
-      },
+      // {
+      //   header: "Count",
+      //   key: "logsCount",
+      //   render: (item: any) => (
+      //     <span className="capitalize">{item?.logsCount ?? 0}</span>
+      //   ),
+      // },
       {
         header: "Last modified",
         key: "lastModified",

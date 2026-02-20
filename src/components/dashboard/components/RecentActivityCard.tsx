@@ -22,19 +22,19 @@ export default function RecentActivityCard() {
   const router = useRouter();
 
   return (
-    <div className="rounded-2xl border border-black/10 bg-white shadow-[0_6px_18px_rgba(17,24,39,0.06)]">
-      <div className="flex items-center justify-between px-4 py-3 text-sm font-bold text-black/80">
+    <div className="rounded-2xl border border-black/10 bg-white shadow-[0_6px_18px_rgba(17,24,39,0.06)] min-h-[270px] p-4">
+      <div className="flex items-center justify-between text-sm mb-3 font-bold text-black/80">
         <span>Recent Activity</span>
         <button className="text-xs font-semibold text-black/40" onClick={()=> router.push('/recent-activity')}>View All</button>
       </div>
 
-      <div className="flex flex-col gap-3 p-4 pt-2">
+      <div className="flex flex-col gap-3">
         {items.length ? (
           items.map((x) => (
             <ActivityItem key={x.id} text={x.message.split("|")[0].trim()} time={formatTime(x.at)} />
           ))
         ) : (
-          <ActivityItem text="No recent activity" time="" />
+          <div className="flex items-center justify-center h-32 text-sm text-black/40">No Activity</div>
         )}
       </div>
     </div>
