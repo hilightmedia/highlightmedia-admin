@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { ToastContainer } from "react-toastify";
 
 interface Props {
   children: React.ReactNode;
@@ -7,6 +8,7 @@ interface Props {
 const LoginLayout = (props: Props) => {
   return (
     <div className="w-full max-w-[1600px] flex xl:items-center mx-auto h-screen overflow-hidden">
+      <ToastContainer />
       <div className="w-full flex gap-3">
         <div className="hidden w-6/12 xl:flex h-full pl-8">
           <Image

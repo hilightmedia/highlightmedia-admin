@@ -16,7 +16,7 @@ type MiniCalendarProps = {
 
 type CalendarValue = CalendarProps["value"];
 
-function MiniCalendar({
+export default function MiniCalendar({
   value,
   activeStartDate,
   onChange,
@@ -29,42 +29,54 @@ function MiniCalendar({
   }).format(activeStartDate);
 
   return (
-    <div className="rounded-2xl border border-black/10 bg-white shadow-[0_6px_18px_rgba(17,24,39,0.06)]">
+    <div className="rounded-2xl border border-black/10 bg-white shadow">
       <div className="flex items-center justify-between px-4 py-3 text-sm font-bold text-black/80">
         <span>{monthLabel}</span>
-        <div className="flex gap-2 text-black/50">
+
+        <div className="flex gap-2">
           <button
             type="button"
             onClick={onPrevMonth}
-            className="grid h-6 w-6 place-items-center rounded-lg border border-black/10 bg-white"
-            aria-label="Previous month"
+            className="grid h-6 w-6 place-items-center rounded border"
           >
             ‹
           </button>
+
           <button
             type="button"
             onClick={onNextMonth}
-            className="grid h-6 w-6 place-items-center rounded-lg border border-black/10 bg-white"
-            aria-label="Next month"
+            className="grid h-6 w-6 place-items-center rounded border"
           >
             ›
           </button>
         </div>
       </div>
 
-      <div className="mini-calendar rounded-2xl  p-4 bg-white">
+      <div className="p-4">
         <Calendar
+          locale="en-US"
+          calendarType="gregory"
           value={value}
+          activeStartDate={activeStartDate}
+          className="mini-calendar"
+          onActiveStartDateChange={({ activeStartDate }) => {
+            if (activeStartDate) {
+              onChange(
+                new Date(
+                  activeStartDate.getFullYear(),
+                  activeStartDate.getMonth(),
+                  value.getDate(),
+                ),
+              );
+            }
+          }}
           onChange={(v: CalendarValue) => {
             const next = Array.isArray(v) ? v[0] : v;
             if (next instanceof Date) onChange(next);
           }}
-          activeStartDate={activeStartDate}
-          onActiveStartDateChange={() => {}}
           showNavigation={false}
           showNeighboringMonth={false}
           selectRange={false}
-          calendarType="gregory"
           minDetail="month"
           maxDetail="month"
           formatShortWeekday={(_, date) =>
@@ -73,15 +85,17 @@ function MiniCalendar({
           formatDay={(_, date) => String(date.getDate())}
           tileClassName={({ date, view }) => {
             if (view !== "month") return "";
+
             const isSelected =
               date.getFullYear() === value.getFullYear() &&
               date.getMonth() === value.getMonth() &&
               date.getDate() === value.getDate();
 
             return cn(
-              "h-7 w-7 rounded-sm text-xs font-semibold",
-              "bg-white text-black/80",
-              isSelected && "bg-[#ff6a00] text-white",
+              "h-8 w-8 flex items-center justify-center rounded text-xs font-semibold",
+              isSelected
+                ? "bg-orange-500 text-white"
+                : "text-black/80",
             );
           }}
         />
@@ -89,5 +103,3 @@ function MiniCalendar({
     </div>
   );
 }
-
-export default MiniCalendar;

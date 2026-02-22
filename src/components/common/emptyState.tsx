@@ -36,7 +36,7 @@ export default function EmptyState({
         alt="Empty state"
         width={500}
         height={500}
-        className={cn("object-contain mt-10 md:mt-16", imageClassName)}
+        className={cn("object-contain mt-10 md:mt-16 w-[300px]", imageClassName)}
       />
 
    

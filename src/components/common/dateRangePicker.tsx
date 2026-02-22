@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Calendar from "react-calendar";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { cn } from "@/src/lib/util";
@@ -24,6 +24,36 @@ type Props = {
   minDate?: Date;
 };
 
+const toLocalNoon = (d: Date) =>
+  new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0, 0);
+
+const dayKey = (d: Date) =>
+  d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+
+const normalizeValue = (v: any, mode: Mode): Value => {
+  if (!v) return null;
+
+  if (mode === "date") {
+    if (v instanceof Date) return toLocalNoon(v);
+    if (Array.isArray(v) && v[0] instanceof Date) return toLocalNoon(v[0]);
+    return null;
+  }
+
+  if (Array.isArray(v)) {
+    const a = v[0] instanceof Date ? toLocalNoon(v[0]) : null;
+    const b = v[1] instanceof Date ? toLocalNoon(v[1]) : null;
+    if (!a || !b) return null;
+    return a <= b ? [a, b] : [b, a];
+  }
+
+  if (v instanceof Date) {
+    const d = toLocalNoon(v);
+    return [d, d];
+  }
+
+  return null;
+};
+
 export default function DateRangePickerModal({
   open,
   onClose,
@@ -35,21 +65,23 @@ export default function DateRangePickerModal({
   disablePastDates = false,
   minDate,
 }: Props) {
+  const prevOpenRef = useRef(false);
+
   const [mode, setMode] = useState<Mode>(initialMode);
-  const [value, setValue] = useState<Value>(initialValue);
+  const [value, setValue] = useState<Value>(normalizeValue(initialValue, initialMode));
 
   useEffect(() => {
-    if (!open) return;
+    const wasOpen = prevOpenRef.current;
+    prevOpenRef.current = open;
+    if (!open || wasOpen) return;
     setMode(initialMode);
-    setValue(initialValue);
+    setValue(normalizeValue(initialValue, initialMode));
   }, [open, initialMode, initialValue]);
 
   const effectiveMinDate = useMemo(() => {
-    if (minDate) return minDate;
+    if (minDate) return toLocalNoon(minDate);
     if (!disablePastDates) return undefined;
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
+    return toLocalNoon(new Date());
   }, [disablePastDates, minDate]);
 
   const canApply = useMemo(() => {
@@ -58,37 +90,31 @@ export default function DateRangePickerModal({
     if (mode === "date") {
       if (!(value instanceof Date)) return false;
       if (!effectiveMinDate) return true;
-      return value >= effectiveMinDate;
+      return dayKey(value) >= dayKey(effectiveMinDate);
     }
 
     if (!Array.isArray(value)) return false;
     const [start, end] = value;
     if (!(start instanceof Date) || !(end instanceof Date)) return false;
     if (!effectiveMinDate) return true;
-    return start >= effectiveMinDate && end >= effectiveMinDate;
+    return dayKey(start) >= dayKey(effectiveMinDate) && dayKey(end) >= dayKey(effectiveMinDate);
   }, [value, mode, effectiveMinDate]);
 
   return (
-    <Dialog open={open} >
-      <DialogContent
-        className={cn("w-[360px] max-w-[92vw] p-6 gap-3", className)}
-      >
-        <div className="text-center text-sm font-semibold text-black/90">
-          {title}
-        </div>
+    <Dialog open={open}>
+      <DialogContent className={cn("w-[360px] max-w-[92vw] p-6 gap-3", className)}>
+        <div className="text-center text-sm font-semibold text-black/90">{title}</div>
 
         <div className="mt-1 flex items-center justify-center gap-6">
           <button
             type="button"
             onClick={() => {
               setMode("date");
-              if (Array.isArray(value)) setValue(value[0] ?? null);
+              setValue((prev) => normalizeValue(prev, "date"));
             }}
             className={cn(
               "rounded-full px-4 py-1 text-xs",
-              mode === "date"
-                ? "bg-[#e86b3c] text-white"
-                : "text-black/50 hover:bg-black/5",
+              mode === "date" ? "bg-[#e86b3c] text-white" : "text-black/50 hover:bg-black/5",
             )}
           >
             Select Date
@@ -98,13 +124,11 @@ export default function DateRangePickerModal({
             type="button"
             onClick={() => {
               setMode("range");
-              if (value instanceof Date) setValue([value, value]);
+              setValue((prev) => normalizeValue(prev, "range"));
             }}
             className={cn(
               "rounded-full px-4 py-1 text-xs",
-              mode === "range"
-                ? "bg-[#e86b3c] text-white"
-                : "text-black/50 hover:bg-black/5",
+              mode === "range" ? "bg-[#e86b3c] text-white" : "text-black/50 hover:bg-black/5",
             )}
           >
             Custom Range
@@ -114,21 +138,19 @@ export default function DateRangePickerModal({
         <Calendar
           className="ui-calendar"
           value={value as any}
-          onChange={(v) => setValue(v as any)}
+          onChange={(v) => setValue(normalizeValue(v, mode))}
           selectRange={mode === "range"}
           minDate={effectiveMinDate}
           tileDisabled={({ date, view }) => {
             if (!effectiveMinDate) return false;
             if (view !== "month") return false;
-            return date < effectiveMinDate;
+            return dayKey(date) < dayKey(effectiveMinDate);
           }}
           prev2Label={null}
           next2Label={null}
           prevLabel={<ChevronLeft className="h-4 w-4 text-black/60" />}
           nextLabel={<ChevronRight className="h-4 w-4 text-black/60" />}
-          formatShortWeekday={(_l, d) =>
-            ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"][d.getDay()]
-          }
+          formatShortWeekday={(_l, d) => ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"][d.getDay()]}
         />
 
         <div className="mt-1 grid grid-cols-2 gap-3">

@@ -15,6 +15,7 @@ import {
 import Button from "../../common/button";
 import GradientIconContainer from "../../common/gradientIconContainer";
 import DateRangePickerModal from "../../common/dateRangePicker";
+import { fromYMDLocal, toYMDLocal } from "@/src/lib/util";
 
 type PickerValue = Date | [Date, Date] | null;
 
@@ -40,15 +41,11 @@ export default function BulkEditFolderValidity({
   const [startIso, setStartIso] = useState<string | null>(null);
   const [endIso, setEndIso] = useState<string | null>(null);
 
-  const initialPickerValue: PickerValue = useMemo(() => {
-    if (!startIso && !endIso) return null;
-    const s = startIso ? new Date(startIso) : null;
-    const e = endIso ? new Date(endIso) : null;
-    if (s && e) return [s, e];
-    if (s) return s;
-    if (e) return e;
-    return null;
-  }, [startIso, endIso]);
+const initialPickerValue: PickerValue = useMemo(() => {
+  if (!startIso || !endIso) return null;
+
+  return [fromYMDLocal(startIso), fromYMDLocal(endIso)];
+}, [startIso, endIso]);
 
   const handleApplyDates = (val: PickerValue) => {
     if (!val) {
@@ -80,8 +77,8 @@ export default function BulkEditFolderValidity({
     const e = new Date(end);
     e.setHours(0, 0, 0, 0);
 
-    setStartIso(s.toISOString());
-    setEndIso(e.toISOString());
+    setStartIso(toYMDLocal(s));
+    setEndIso(toYMDLocal(e));
     setDateOpen(false);
   };
 

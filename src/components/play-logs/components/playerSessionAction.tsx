@@ -3,30 +3,42 @@
 import React, { useMemo, useState } from "react";
 import { Search, Download, Calendar } from "lucide-react";
 import { Input } from "@/src/components/common/input";
-import Select from "@/src/components/common/select";
-import { FolderLogsSortOptions } from "@/src/lib/constant";
-import {
-  FolderLogsParams,
-  FolderLogsSortBy,
-  SortOrder,
-  FolderLogItem,
-} from "@/types/types";
+import DateRangePickerModal from "@/src/components/common/dateRangePicker";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-import { formatSeconds, fromYMDLocal, toYMDLocal } from "@/src/lib/util";
-import DateRangePickerModal from "@/src/components/common/dateRangePicker";
+import { fromYMDLocal, toYMDLocal } from "@/src/lib/util";
 
-type Props = {
-  params: FolderLogsParams;
-  setParams: React.Dispatch<React.SetStateAction<FolderLogsParams>>;
-  data: FolderLogItem[];
+export type PlayerSessionItem = {
+  sessionStart: string | null;
+  sessionEnd: string | null;
+  status: "Online" | "Offline";
+  lastActive: string | null;
+  totalRunTimeSec: number;
+};
+
+export type PlayerSessionParams = {
+  search?: string;
+  startDate?: string;
+  endDate?: string;
 };
 
 type PickerValue = Date | [Date, Date] | null;
 
+type Props = {
+  params: PlayerSessionParams;
+  setParams: React.Dispatch<React.SetStateAction<PlayerSessionParams>>;
+  data: PlayerSessionItem[];
+};
 
+const formatSeconds = (sec?: number) => {
+  if (!sec || sec <= 0) return "0s";
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  return `${h}h ${m}m ${s}s`;
+};
 
-export default function FolderLogsActions({
+export default function PlayerSessionsActions({
   params,
   setParams,
   data,
@@ -60,10 +72,16 @@ export default function FolderLogsActions({
 
     if (!start || !end) return setDateOpen(false);
 
+    const s = new Date(start);
+    s.setHours(0, 0, 0, 0);
+
+    const e = new Date(end);
+    e.setHours(0, 0, 0, 0);
+
     setParams((p) => ({
       ...p,
-      startDate: toYMDLocal(start),
-      endDate: toYMDLocal(end),
+        startDate: toYMDLocal(start),
+        endDate: toYMDLocal(end),
     }));
 
     setDateOpen(false);
@@ -71,29 +89,30 @@ export default function FolderLogsActions({
 
   const handleExport = () => {
     const rows = data.map((item) => ({
-      Folder: item.folderName,
-      LastPlayed: item.lastPlayedAt
-        ? new Date(item.lastPlayedAt).toLocaleString()
+      SessionStart: item.sessionStart
+        ? new Date(item.sessionStart).toLocaleString()
         : "-",
-      TotalRunTime: formatSeconds(item.totalRunTimeSec),
-      Devices: item.devices,
-      Plays: item.plays,
+      SessionEnd: item.sessionEnd
+        ? new Date(item.sessionEnd).toLocaleString()
+        : "-",
+      Status: item.status,
+      LastActive: item.lastActive
+        ? new Date(item.lastActive).toLocaleString()
+        : "-",
+      RunTime: formatSeconds(item.totalRunTimeSec),
     }));
 
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Folder Logs");
+    XLSX.utils.book_append_sheet(wb, ws, "Player Sessions");
 
-    const buffer = XLSX.write(wb, {
-      bookType: "xlsx",
-      type: "array",
-    });
+    const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
 
     const blob = new Blob([buffer], {
       type: "application/octet-stream",
     });
 
-    saveAs(blob, `folder-logs-${Date.now()}.xlsx`);
+    saveAs(blob, `player-sessions-${Date.now()}.xlsx`);
   };
 
   return (
@@ -106,10 +125,10 @@ export default function FolderLogsActions({
       />
 
       <div className="grid grid-cols-6 md:grid-cols-12 gap-6 items-center">
-        <div className="relative col-span-6 md:col-span-3">
+        <div className="relative col-span-6 md:col-span-4">
           <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Search folders..."
+            placeholder="Search..."
             className="pl-10 bg-gray-100"
             value={params.search ?? ""}
             onChange={(e) =>
@@ -119,22 +138,6 @@ export default function FolderLogsActions({
         </div>
 
         <div className="col-span-3 md:col-span-3">
-          <Select
-            options={FolderLogsSortOptions}
-            value={`${params.sortBy ?? "lastPlayed"}:${
-              params.sortOrder ?? "desc"
-            }`}
-            onChange={(val) => {
-              const [sortBy, sortOrder] = String(val).split(":") as [
-                FolderLogsSortBy,
-                SortOrder
-              ];
-              setParams((p) => ({ ...p, sortBy, sortOrder }));
-            }}
-          />
-        </div>
-
-        <div className="col-span-3 md:col-span-2">
           <button
             onClick={() => setDateOpen(true)}
             className="flex items-center gap-2 border rounded-lg px-4 py-2 w-full"

@@ -58,7 +58,7 @@ export default function AlertsPage() {
     queryKey: ["alerts", "all"],
     queryFn: () =>
       axiosInstance
-        .get("/media/get-alerts", { params: { offset: 0, limit: 100 } })
+        .get("/media/get-alerts", { params: { offset: 0, limit: 3 } })
         .then(
           (r) =>
             r.data as {

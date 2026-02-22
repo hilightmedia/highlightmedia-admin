@@ -162,7 +162,8 @@ export type FolderLogsParams = {
   search?: string;
   sortBy?: FolderLogsSortBy;
   sortOrder?: SortOrder;
-  date?: string;
+  startDate: string;
+  endDate: string;
   offset?: number;
   limit?: number;
 };
@@ -271,4 +272,22 @@ export type PlaylistLogsResponse = {
   message: string;
   items: PlaylistLogItem[];
   pagination: { total: number; offset: number; limit: number; hasMore: boolean };
+};
+
+export type PlayerLogItem = {
+  id: number;
+  name: string;
+  sessionStart: string | null;
+  sessionEnd: string | null;
+  status: "Online" | "Offline";
+  lastActive: string | null;
+  totalRunTimeSec: number;
+};
+
+export type PlayerLogsParams = {
+  search?: string;
+  sortBy?: "name" | "lastActive" | "duration" | "status";
+  sortOrder?: "asc" | "desc";
+  startDate?: string;
+  endDate?: string;
 };

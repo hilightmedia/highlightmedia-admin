@@ -1,12 +1,12 @@
 import SiteLayout from "@/src/components/layout/siteLayout";
-import FileLogsPage from "@/src/components/play-logs/file";
+import DeviceLogsFolder from "@/src/components/play-logs/playerByFolder";
 
 
 
 const MediaFileLogsPage = () => {
     return (
         <SiteLayout>
-             <FileLogsPage />
+             <DeviceLogsFolder />
         </SiteLayout>
     )
 };

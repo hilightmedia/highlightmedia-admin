@@ -16,6 +16,7 @@ import Button from "../../common/button";
 import GradientIconContainer from "../../common/gradientIconContainer";
 import { Input } from "../../common/input";
 import DateRangePickerModal from "../../common/dateRangePicker";
+import { fromYMDLocal, toYMDLocal } from "@/src/lib/util";
 
 type Props = {
   open: boolean;
@@ -64,17 +65,11 @@ export default function CreateFolder({ open, onClose, folder }: Props) {
     setDateOpen(false);
   }, [open, folder]);
 
-  const initialPickerValue: PickerValue = useMemo(() => {
-    if (!formData.start_date && !formData.end_date) return null;
+const initialPickerValue: PickerValue = useMemo(() => {
+  if (!formData.start_date || !formData.end_date) return null;
 
-    const s = formData.start_date ? new Date(formData.start_date) : null;
-    const e = formData.end_date ? new Date(formData.end_date) : null;
-
-    if (s && e) return [s, e];
-    if (s) return s;
-    if (e) return e;
-    return null;
-  }, [formData.start_date, formData.end_date]);
+  return [fromYMDLocal(formData.start_date), fromYMDLocal(formData.end_date)];
+}, [formData.start_date, formData.end_date]);
 
   const handleApplyDates = (val: PickerValue) => {
     if (!val) {
@@ -114,8 +109,8 @@ export default function CreateFolder({ open, onClose, folder }: Props) {
 
     setFormData((p) => ({
       ...p,
-      start_date: startIso.toISOString(),
-      end_date: endIso.toISOString(),
+      start_date: toYMDLocal(startIso),
+      end_date: toYMDLocal(endIso),
     }));
 
     setDateOpen(false);

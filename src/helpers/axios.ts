@@ -1,14 +1,29 @@
 import axios from "axios";
+import Router from "next/router";
+import { toast } from "react-toastify";
 
 import { BACKEND_URI } from "../lib/constant";
-import Router from "next/router";
 import { clearStorage, getAccessToken, getRefreshToken } from "../lib/util";
 
-const BASE_URL = `${BACKEND_URI}/api`; // 👈 adjust this if your backend has no /api
+const BASE_URL = `${BACKEND_URI}/api`;
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
 });
+
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
 
 axiosInstance.interceptors.request.use(
   (config) => {
@@ -18,22 +33,43 @@ axiosInstance.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
-// ✅ Handle errors globally
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.config.method?.toLowerCase() !== "get") {
+      const message = response?.data?.message;
+      if (message) toast.success(message);
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
 
-    // 🔴 If token expired (401) and we haven’t retried yet
-    if (
-      error.response &&
-      error.response.status === 401 &&
-      !originalRequest._retry
-    ) {
+    const showErrorToast = (err: any) => {
+      const message =
+        err?.response?.data?.message || err?.message || "Something went wrong";
+      toast.error(message);
+    };
+
+    if (error?.response?.status === 401 && !originalRequest?._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({
+            resolve: (token: string) => {
+              originalRequest.headers["authorization"] = `Bearer ${token}`;
+              resolve(axiosInstance(originalRequest));
+            },
+            reject: (err: any) => {
+              reject(err);
+            },
+          });
+        });
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
         const refreshToken = getRefreshToken();
@@ -41,40 +77,50 @@ axiosInstance.interceptors.response.use(
         if (!refreshToken) {
           clearStorage();
           Router.push("/login");
+          showErrorToast(error);
           return Promise.reject(error);
         }
 
-        // 🔄 Try refreshing the access token
-        const response = await axios.post(`${BASE_URL}/refresh/token`, {
-          refreshToken,
-        });
+        const refreshResponse = await axios.post(
+          `${BASE_URL}/auth/refresh-token`,
+          { refreshToken },
+        );
 
-        if (response.status === 200) {
-          const newAccessToken = response?.data?.accessToken;
+        const newAccessToken = refreshResponse?.data?.accessToken;
 
-          if (newAccessToken) {
-            // Retry original request with new token
-            originalRequest.headers["authorization"] = newAccessToken;
-            return axiosInstance(originalRequest);
-          }
+        if (!newAccessToken) {
+          throw new Error("Token refresh failed");
         }
+
+        localStorage.setItem("accessToken", newAccessToken);
+
+        axiosInstance.defaults.headers.common["authorization"] =
+          `Bearer ${newAccessToken}`;
+
+        processQueue(null, newAccessToken);
+
+        originalRequest.headers["authorization"] = `Bearer ${newAccessToken}`;
+
+        return axiosInstance(originalRequest);
       } catch (refreshError) {
-        console.error("Refresh token failed:", refreshError);
+        processQueue(refreshError, null);
         clearStorage();
-        Router.push("/login"); // 👈 redirect if refresh fails
+        Router.push("/login");
+        showErrorToast(refreshError);
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 
-    // 🔴 If still 401 or 404 → logout & redirect
-    if (error.response && error.response.status === 401) {
-      console.warn("API Error:", error.response.status, error.response.data);
+    if (error?.response?.status === 401) {
       clearStorage();
       Router.push("/login");
     }
 
+    showErrorToast(error);
     return Promise.reject(error);
-  }
+  },
 );
 
 export default axiosInstance;

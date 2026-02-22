@@ -8,7 +8,11 @@ import useDebounce from "@/src/hooks/useDebounce";
 import { formatSeconds } from "@/src/lib/util";
 import { RenderThumbnail } from "@/src/components/common/thumb";
 import EmptyState from "@/src/components/common/emptyState";
-import { FolderLogsParams, FolderLogsResponse, FolderLogItem } from "@/types/types";
+import {
+  FolderLogsParams,
+  FolderLogsResponse,
+  FolderLogItem,
+} from "@/types/types";
 import FolderLogsActions from "./components/mediaActions";
 import { useRouter } from "next/router";
 
@@ -20,6 +24,8 @@ export default function MediaLogs() {
     sortOrder: "desc",
     search: "",
     limit: LIMIT,
+    startDate: "",
+    endDate: "",
   });
 
   const router = useRouter();
@@ -56,7 +62,8 @@ export default function MediaLogs() {
         .then((r) => r.data as FolderLogsResponse),
     getNextPageParam: (lastPage) =>
       lastPage.pagination?.hasMore
-        ? (lastPage.pagination.offset ?? 0) + (lastPage.pagination.limit ?? LIMIT)
+        ? (lastPage.pagination.offset ?? 0) +
+          (lastPage.pagination.limit ?? LIMIT)
         : undefined,
     staleTime: 0,
   });
@@ -92,7 +99,11 @@ export default function MediaLogs() {
         header: "Thumbnail",
         key: "thumbnail",
         render: (item: FolderLogItem) => (
-          <RenderThumbnail thumbnail={item.thumbnail} alt={item.folderName} type="folder" />
+          <RenderThumbnail
+            thumbnail={item.thumbnail}
+            alt={item.folderName}
+            type="folder"
+          />
         ),
       },
       {
@@ -101,7 +112,11 @@ export default function MediaLogs() {
         render: (item: FolderLogItem) => (
           <button
             className="hover:underline cursor-pointer text-left truncate min-w-[150px] max-w-[200px]"
-            onClick={() => router.push(`/play-logs/media/${item.folderId}`)}
+            onClick={() =>
+              router.push(
+                `/play-logs/media/${item.folderId}?startDate=${params.startDate}&endDate=${params.endDate}`,
+              )
+            }
           >
             {item.folderName}
           </button>
@@ -111,7 +126,8 @@ export default function MediaLogs() {
         header: "Last Played",
         key: "lastPlayedAt",
         render: (item: FolderLogItem) => {
-          if (!item.lastPlayedAt) return <span className="text-black/40">-</span>;
+          if (!item.lastPlayedAt)
+            return <span className="text-black/40">-</span>;
           const d = new Date(item.lastPlayedAt);
           return (
             <div className="inline-flex flex-col text-xs min-w-[100px]">
@@ -124,7 +140,11 @@ export default function MediaLogs() {
       {
         header: "Total Run Time",
         key: "totalRunTimeSec",
-        render: (item: FolderLogItem) => <span className="min-w-[150px]">{formatSeconds(item.totalRunTimeSec)}</span>,
+        render: (item: FolderLogItem) => (
+          <span className="min-w-[150px]">
+            {formatSeconds(item.totalRunTimeSec)}
+          </span>
+        ),
       },
       {
         header: "Devices",
@@ -145,7 +165,13 @@ export default function MediaLogs() {
 
   return (
     <section className="p-6 w-full flex flex-col gap-6 max-w-screen-xl mx-auto">
-      <FolderLogsActions params={params} setParams={setParams} />
+      <div className="flex flex-wrap items-center gap-4">
+        {" "}
+        <div className="text-sm text-black/50">
+          Total Clients - {items.length}{" "}
+        </div>{" "}
+      </div>
+      <FolderLogsActions params={params} setParams={setParams} data={items} />
 
       {showEmpty ? (
         <EmptyState image="/emptyFolder.svg" message="No folder logs found" />
@@ -161,13 +187,17 @@ export default function MediaLogs() {
           <div ref={sentinelRef} className="h-6" />
 
           {isFetchingNextPage ? (
-            <div className="text-sm font-semibold text-black/40">Loading more...</div>
+            <div className="text-sm font-semibold text-black/40">
+              Loading more...
+            </div>
           ) : null}
 
           {!hasNextPage && items.length > 0 ? (
-            <div className="text-xs font-semibold text-black/30">End of results</div>
+            <div className="text-xs font-semibold text-black/30">
+              End of results
+            </div>
           ) : null}
-        </div>  
+        </div>
       )}
     </section>
   );

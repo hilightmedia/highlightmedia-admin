@@ -21,7 +21,7 @@ export const menu = [
     path: "/play-logs/media",
     icon: PlayLogsOutlined,
     children: [
-      { name: "Media Logs", path: "/play-logs/media" },
+      { name: "Client Logs", path: "/play-logs/media" },
       // { name: "Playlist Logs", path: "/play-logs/playlist" },
       { name: "Player Logs", path: "/play-logs/player" },
     ],

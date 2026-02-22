@@ -176,14 +176,18 @@ body {
 } */
 
 @layer components {
+  .mini-calendar {
+    @apply w-full;
+  }
+
   .mini-calendar .react-calendar {
-    @apply w-full border-0 bg-white;
+    @apply w-full bg-white;
+    border: 0 !important;
   }
-
-  .mini-calendar .react-calendar__navigation {
-    @apply hidden;
+  .react-calendar {
+    border: 0 !important;
+    width:100% !important;
   }
-
   .mini-calendar .react-calendar__viewContainer {
     @apply w-full;
   }
@@ -193,55 +197,55 @@ body {
   }
 
   .mini-calendar .react-calendar__month-view__weekdays {
-    @apply grid grid-cols-7 w-full text-center text-[11px] font-bold text-black/50;
+    @apply w-full text-center text-xs sm:text-sm font-semibold text-black/60;
   }
 
   .mini-calendar .react-calendar__month-view__weekdays__weekday {
     @apply py-2;
   }
 
-  .mini-calendar .react-calendar__month-view__weekdays__weekday abbr {
-    @apply no-underline;
-  }
-
-  .mini-calendar .react-calendar__month-view__days {
-    @apply grid grid-cols-7 gap-1 w-full;
-  }
-
   .mini-calendar .react-calendar__tile {
-    @apply m-0 p-0 border-0 bg-white text-black/80 font-semibold text-xs rounded-md aspect-square grid place-items-center;
-  }
+    border: 0 !important;
+    text-decoration: none !important;
+    padding: 0 !important;
 
-  @screen sm {
-    .mini-calendar .react-calendar__tile {
-      @apply text-sm;
-    }
+    @apply flex items-center justify-center
+           text-xs sm:text-sm font-semibold
+           rounded-md
+           h-8 sm:h-10 md:h-12
+           transition-colors;
   }
 
   .mini-calendar abbr {
-    @apply no-underline;
+    text-decoration: none !important;
   }
 
   .mini-calendar .react-calendar__tile--now {
-    @apply bg-black/[0.04];
+    @apply bg-black/5;
   }
 
-  .mini-calendar .react-calendar__tile:enabled:hover,
-  .mini-calendar .react-calendar__tile:enabled:focus {
+  .mini-calendar .react-calendar__tile:enabled:hover {
     @apply bg-[#ff6a00]/10;
   }
 
   .mini-calendar .react-calendar__tile--active {
-    @apply bg-[#ff6a00] text-white;
+    background: #ff6a00 !important;
+    color: #fff !important;
   }
 
   .mini-calendar .react-calendar__tile--active:focus,
   .mini-calendar .react-calendar__tile--active:enabled:focus,
   .mini-calendar .react-calendar__tile--active:enabled:hover {
-    @apply bg-[#ff6a00] text-white;
+    background: #ff6a00 !important;
+    color: #fff !important;
   }
 
   .mini-calendar .react-calendar__month-view__days__day--neighboringMonth {
-    @apply text-black/25;
+    @apply text-black/30;
   }
+  .mini-calendar .react-calendar__tile {
+  aspect-ratio: 1 / 1;
+  height: auto;
 }
+}
+

@@ -110,3 +110,15 @@ export const formatBytes = (bytes: number) => {
   }
   return `${n.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 };
+
+export const toYMDLocal = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+
+export const fromYMDLocal = (s: string) => {
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
