@@ -6,8 +6,11 @@ import axiosInstance from "@/src/helpers/axios";
 import Table from "@/src/components/common/table";
 import EmptyState from "@/src/components/common/emptyState";
 import { useRouter } from "next/router";
-import PlayerSessionsActions, { PlayerSessionItem, PlayerSessionParams } from "./components/playerSessionAction";
-
+import PlayerSessionsActions, {
+  PlayerSessionItem,
+  PlayerSessionParams,
+} from "./components/playerSessionAction";
+import { Wifi, WifiOff } from "lucide-react";
 
 const formatSeconds = (sec?: number) => {
   if (!sec || sec <= 0) return "0s";
@@ -50,13 +53,12 @@ type Response = {
 
 export default function PlayerSessionsPage() {
   const LIMIT = 20;
+  const router = useRouter();
 
   const [params, setParams] = useState<PlayerSessionParams>({
     startDate: "",
     endDate: "",
   });
-
-  const router = useRouter();
 
   const playerId =
     router.isReady && typeof router.query.playerId === "string"
@@ -81,7 +83,7 @@ export default function PlayerSessionsPage() {
       startDate,
       endDate,
     }));
-  }, [router.isReady]);
+  }, [router.isReady, router.query.startDate, router.query.endDate]);
 
   const queryParams = useMemo(
     () => ({
@@ -114,7 +116,7 @@ export default function PlayerSessionsPage() {
     getNextPageParam: (lastPage) =>
       lastPage.pagination?.hasMore
         ? (lastPage.pagination.offset ?? 0) +
-          (lastPage.pagination.limit ?? LIMIT)
+        (lastPage.pagination.limit ?? LIMIT)
         : undefined,
   });
 
@@ -148,33 +150,73 @@ export default function PlayerSessionsPage() {
       {
         header: "Session Start",
         key: "sessionStart",
-        render: (item: PlayerSessionItem) =>
-          item.sessionStart
-            ? new Date(item.sessionStart).toLocaleString()
-            : "-",
+        render: (item: PlayerSessionItem) => {
+          if (!item.sessionStart) return "-";
+          const d = new Date(item.sessionStart);
+          return (
+            <div className="text-xs">
+              <div>{d.toLocaleDateString()}</div>
+              <div>{d.toLocaleTimeString()}</div>
+            </div>
+          );
+        },
       },
       {
         header: "Session End",
         key: "sessionEnd",
-        render: (item: PlayerSessionItem) =>
-          item.sessionEnd
-            ? new Date(item.sessionEnd).toLocaleString()
-            : "-",
+        render: (item: PlayerSessionItem) => {
+          if (!item.sessionEnd) return "-";
+          const d = new Date(item.sessionEnd);
+          return (
+            <div className="text-xs">
+              <div>{d.toLocaleDateString()}</div>
+              <div>{d.toLocaleTimeString()}</div>
+            </div>
+          );
+        }
       },
       {
         header: "Status",
         key: "status",
-        render: (item: PlayerSessionItem) => (
-          <StatusPill status={item.status} />
-        ),
+        render: (item: any) => {
+          const statusColor =
+            item.status === "Online" ? "bg-green-100" : "bg-red-100";
+
+          return (
+            <span
+              className={`py-1 inline-flex items-center gap-1 px-3 rounded-full text-sm ${statusColor}`}
+            >
+              {item.status === "Online" ? (
+                <Wifi
+                  color="#fff"
+                  size={15}
+                  className="p-0.5 bg-green-500 rounded-full"
+                />
+              ) : (
+                <WifiOff
+                  color="#fff"
+                  size={15}
+                  className="p-0.5 bg-red-500 rounded-full"
+                />
+              )}
+              {item.status}
+            </span>
+          );
+        },
       },
       {
         header: "Last Active",
         key: "lastActive",
-        render: (item: PlayerSessionItem) =>
-          item.lastActive
-            ? new Date(item.lastActive).toLocaleString()
-            : "-",
+        render: (item: PlayerSessionItem) => {
+          if (!item.lastActive) return "-";
+          const d = new Date(item.lastActive);
+          return (
+            <div className="text-xs">
+              <div>{d.toLocaleDateString()}</div>
+              <div>{d.toLocaleTimeString()}</div>
+            </div>
+          );
+        }
       },
       {
         header: "Run Time",
@@ -190,12 +232,10 @@ export default function PlayerSessionsPage() {
 
   return (
     <section className="p-6 flex flex-col gap-6 max-w-screen-xl mx-auto">
-        <div className="flex flex-wrap items-center gap-4">
-        {" "}
-        <div className="text-sm text-black/50">
-          Total Players - {items.length}{" "}
-        </div>{" "}
+      <div className="text-sm text-black/50">
+        Total Players - {items.length}
       </div>
+
       <PlayerSessionsActions
         params={params}
         setParams={setParams}
@@ -203,10 +243,7 @@ export default function PlayerSessionsPage() {
       />
 
       {showEmpty ? (
-        <EmptyState
-          image="/emptyFolder.svg"
-          message="No sessions found"
-        />
+        <EmptyState image="/emptyFolder.svg" message="No sessions found" />
       ) : (
         <div>
           <Table

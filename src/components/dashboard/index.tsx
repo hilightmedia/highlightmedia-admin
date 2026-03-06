@@ -12,6 +12,7 @@ import StatCard from "./components/statCard";
 import Table from "../common/table";
 import axiosInstance from "@/src/helpers/axios";
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/router";
 
 type SortBy = "default" | "name" | "status";
 
@@ -124,6 +125,8 @@ const Dashboard = () => {
       render: (item: SessionRow) => item.duration,
     },
   ];
+
+  const router = useRouter()
 
   return (
     <div className="mx-auto w-full max-w-[1200px] p-4 overflow-x-hidden">

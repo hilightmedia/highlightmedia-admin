@@ -66,10 +66,26 @@ export default function CreateFolder({ open, onClose, folder }: Props) {
   }, [open, folder]);
 
 const initialPickerValue: PickerValue = useMemo(() => {
-  if (!formData.start_date || !formData.end_date) return null;
+  const today = new Date();
 
-  return [fromYMDLocal(formData.start_date), fromYMDLocal(formData.end_date)];
+  if (!formData.start_date || !formData.end_date) {
+    return [today, today];
+  }
+
+  try {
+    const start = fromYMDLocal(formData.start_date);
+    const end = fromYMDLocal(formData.end_date);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return [today, today];
+    }
+
+    return [start, end];
+  } catch {
+    return [today, today];
+  }
 }, [formData.start_date, formData.end_date]);
+
 
   const handleApplyDates = (val: PickerValue) => {
     if (!val) {

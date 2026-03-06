@@ -5,7 +5,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import axiosInstance from "@/src/helpers/axios";
 import Table from "@/src/components/common/table";
 import useDebounce from "@/src/hooks/useDebounce";
-import { formatSeconds } from "@/src/lib/util";
+import { formatSeconds, toYMDLocal } from "@/src/lib/util";
 import { RenderThumbnail } from "@/src/components/common/thumb";
 import EmptyState from "@/src/components/common/emptyState";
 import {
@@ -19,13 +19,15 @@ import { useRouter } from "next/router";
 export default function MediaLogs() {
   const LIMIT = 20;
 
+  const today = toYMDLocal(new Date());
+
   const [params, setParams] = useState<FolderLogsParams>({
     sortBy: "lastPlayed",
     sortOrder: "desc",
     search: "",
     limit: LIMIT,
-    startDate: "",
-    endDate: "",
+    startDate: today,
+    endDate: today,
   });
 
   const router = useRouter();
@@ -86,7 +88,7 @@ export default function MediaLogs() {
           fetchNextPage();
         }
       },
-      { root: null, rootMargin: "200px", threshold: 0 },
+      { rootMargin: "200px" },
     );
 
     io.observe(el);
@@ -157,20 +159,17 @@ export default function MediaLogs() {
         render: (item: FolderLogItem) => <span>{item.plays}</span>,
       },
     ],
-    [router],
+    [router, params.startDate, params.endDate],
   );
 
   const showEmpty = !isLoading && items.length === 0;
-  const showInitialLoading = isLoading && items.length === 0;
 
   return (
     <section className="p-6 w-full flex flex-col gap-6 max-w-screen-xl mx-auto">
-      <div className="flex flex-wrap items-center gap-4">
-        {" "}
-        <div className="text-sm text-black/50">
-          Total Clients - {items.length}{" "}
-        </div>{" "}
+      <div className="text-sm text-black/50">
+        Total Clients - {items.length}
       </div>
+
       <FolderLogsActions params={params} setParams={setParams} data={items} />
 
       {showEmpty ? (
@@ -181,22 +180,18 @@ export default function MediaLogs() {
             data={items}
             columns={columns as any}
             maxHeight="h-auto"
-            loading={showInitialLoading || (isFetching && items.length === 0)}
+            loading={isLoading || (isFetching && items.length === 0)}
           />
 
           <div ref={sentinelRef} className="h-6" />
 
-          {isFetchingNextPage ? (
-            <div className="text-sm font-semibold text-black/40">
-              Loading more...
-            </div>
-          ) : null}
+          {isFetchingNextPage && (
+            <div className="text-sm text-black/40">Loading more...</div>
+          )}
 
-          {!hasNextPage && items.length > 0 ? (
-            <div className="text-xs font-semibold text-black/30">
-              End of results
-            </div>
-          ) : null}
+          {!hasNextPage && items.length > 0 && (
+            <div className="text-xs text-black/30">End of results</div>
+          )}
         </div>
       )}
     </section>

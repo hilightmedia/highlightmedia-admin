@@ -13,7 +13,7 @@ export default function StatCard({
   return (
     <div
       className={cn(
-        "relative min-h-[58px] overflow-hidden rounded-xl border border-orange-500/10 px-4 py-3 shadow-[0_2px_10px_rgba(17,24,39,0.04)]",
+        "relative min-h-[58px] cursor-pointer overflow-hidden rounded-xl border border-orange-500/10 px-4 py-3 shadow-[0_2px_10px_rgba(17,24,39,0.04)]",
         primary
           ? "border-none bg-[#ff6a00] text-white"
           : "bg-[#ffe4cf] text-black"

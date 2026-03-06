@@ -139,7 +139,7 @@ export default function PlayerByFolderIndex() {
     getNextPageParam: (lastPage) =>
       lastPage.pagination?.hasMore
         ? (lastPage.pagination.offset ?? 0) +
-          (lastPage.pagination.limit ?? LIMIT)
+        (lastPage.pagination.limit ?? LIMIT)
         : undefined,
     staleTime: 0,
   });
@@ -171,78 +171,100 @@ export default function PlayerByFolderIndex() {
     return () => io.disconnect();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-  const columns = useMemo(
-    () => [
-      {
-        header: "Name",
-        key: "playerName",
-        render: (item: DeviceLogItem) => (
-          <span className="truncate min-w-[120px] max-w-[220px]">
-            {item.playerName}{" "}
-          </span>
-        ),
-      },
-      {
-        header: "Status",
-        key: "status",
-         render: (item: any) => {
-        const statusColor = item.status === "Online" ? "bg-green-100" : "bg-red-100";
+const columns = useMemo(
+  () => [
+    {
+      header: "Name",
+      key: "playerName",
+      render: (item: DeviceLogItem) => (
+        <span
+          className="truncate min-w-[120px] max-w-[220px] text-left"
+        >
+          {item.playerName}
+        </span>
+      ),
+    },
+    {
+      header: "Status",
+      key: "status",
+      render: (item: any) => {
+        const statusColor =
+          item.status === "Online" ? "bg-green-100" : "bg-red-100";
+
         return (
-          <span className={`py-1 inline-flex items-center gap-1 px-3 rounded-full text-sm capitalize ${statusColor}`}>
+          <span
+            className={`py-1 inline-flex items-center gap-1 px-3 rounded-full text-sm capitalize ${statusColor}`}
+          >
             {item.status === "Online" ? (
-              <Wifi color="#fff" size={15} className="p-0.5 bg-green-500 rounded-full" />
+              <Wifi
+                color="#fff"
+                size={15}
+                className="p-0.5 bg-green-500 rounded-full"
+              />
             ) : (
-              <WifiOff color="#fff" size={15} className="p-0.5 bg-red-500 rounded-full" />
+              <WifiOff
+                color="#fff"
+                size={15}
+                className="p-0.5 bg-red-500 rounded-full"
+              />
             )}
             {item.status}
           </span>
         );
       },
+    },
+    {
+      header: "Last Active",
+      key: "lastActive",
+      render: (item: DeviceLogItem) => {
+        if (!item.lastActive)
+          return <span className="text-black/40">-</span>;
+
+        const d = new Date(item.lastActive);
+
+        return (
+          <div className="inline-flex flex-col text-xs min-w-[110px]">
+            <span>{d.toLocaleDateString()}</span>
+            <span>{d.toLocaleTimeString()}</span>
+          </div>
+        );
       },
-      {
-        header: "Last Active",
-        key: "lastActive",
-        render: (item: DeviceLogItem) => {
-          if (!item.lastActive) return <span className="text-black/40">-</span>;
-          const d = new Date(item.lastActive);
-          return (
-            <div className="inline-flex flex-col text-xs min-w-[110px]">
-              {" "}
-              <span>{d.toLocaleDateString()}</span>{" "}
-              <span>{d.toLocaleTimeString()}</span>{" "}
-            </div>
-          );
-        },
-      },
-      {
-        header: "No of times played",
-        key: "plays",
-        render: (item: DeviceLogItem) => (
-          <span className="min-w-[80px]">{item.plays}</span>
-        ),
-      },
-      {
-        header: "Total hours",
-        key: "totalHours",
-        render: (item: DeviceLogItem) => (
-          <span className="min-w-[100px]">{formatSeconds(item?.totalHours || 0)} </span>
-        ),
-      },
-      {
-        header: "View",
-        key: "view",
-        render: (item: DeviceLogItem) => (
-          <button
-            className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold px-4 py-2 rounded-md"
-            onClick={() => router.push(`/play-logs/player/${item.playerId}`)}
-          >
-            View{" "}
-          </button>
-        ),
-      },
-    ],
-    [router],
-  );
+    },
+    {
+      header: "No of times played",
+      key: "plays",
+      render: (item: DeviceLogItem) => (
+        <span className="min-w-[80px]">{item.plays}</span>
+      ),
+    },
+    {
+      header: "Total hours",
+      key: "totalHours",
+      render: (item: DeviceLogItem) => (
+        <span className="min-w-[100px]">
+          {formatSeconds(item?.totalHours || 0)}
+        </span>
+      ),
+    },
+    {
+      header: "View",
+      key: "view",
+      render: (item: DeviceLogItem) => (
+        <button
+          className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold px-4 py-2 rounded-md"
+          onClick={() =>
+            router.push(
+              `/play-logs/player/${item.playerId}?startDate=${params.startDate}&endDate=${params.endDate}`
+            )
+          }
+        >
+          View
+        </button>
+      ),
+    },
+  ],
+  [router, params.startDate, params.endDate]
+);
 
   const showEmpty = !isLoading && items.length === 0;
   const showInitialLoading = isLoading && items.length === 0;

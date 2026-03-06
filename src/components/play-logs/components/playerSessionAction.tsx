@@ -44,14 +44,21 @@ export default function PlayerSessionsActions({
   data,
 }: Props) {
   const [dateOpen, setDateOpen] = useState(false);
+  
+const initialPickerValue: PickerValue = useMemo(() => {
+  if (!params.startDate || !params.endDate) return null;
 
-  const initialPickerValue: PickerValue = useMemo(() => {
-    if (!params.startDate || !params.endDate) return null;
-    return [
-      fromYMDLocal(params.startDate),
-      fromYMDLocal(params.endDate),
-    ];
-  }, [params.startDate, params.endDate]);
+  try {
+    const start = fromYMDLocal(params.startDate);
+    const end = fromYMDLocal(params.endDate);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
+
+    return [start, end];
+  } catch {
+    return null;
+  }
+}, [params.startDate, params.endDate]);
 
   const handleApplyDates = (val: PickerValue) => {
     if (!val) return setDateOpen(false);
@@ -124,41 +131,45 @@ export default function PlayerSessionsActions({
         initialValue={initialPickerValue}
       />
 
-      <div className="grid grid-cols-6 md:grid-cols-12 gap-6 items-center">
-        <div className="relative col-span-6 md:col-span-4">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search..."
-            className="pl-10 bg-gray-100"
-            value={params.search ?? ""}
-            onChange={(e) =>
-              setParams((p) => ({ ...p, search: e.target.value }))
-            }
-          />
-        </div>
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-center">
 
-        <div className="col-span-3 md:col-span-3">
-          <button
-            onClick={() => setDateOpen(true)}
-            className="flex items-center gap-2 border rounded-lg px-4 py-2 w-full"
-          >
-            <Calendar size={16} />
-            {params.startDate && params.endDate
-              ? `${params.startDate} → ${params.endDate}`
-              : "Select Dates"}
-          </button>
-        </div>
+  <div className="relative sm:col-span-2 lg:col-span-5 min-w-0">
+    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+    <Input
+      placeholder="Search..."
+      className="pl-10 bg-gray-100 w-full"
+      value={params.search ?? ""}
+      onChange={(e) =>
+        setParams((p) => ({ ...p, search: e.target.value }))
+      }
+    />
+  </div>
 
-        <div className="col-span-3 md:col-span-2">
-          <button
-            onClick={handleExport}
-            className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg w-full"
-          >
-            <Download size={16} />
-            Export
-          </button>
-        </div>
-      </div>
+  <div className="sm:col-span-1 lg:col-span-3">
+    <button
+      onClick={() => setDateOpen(true)}
+      className="flex items-center justify-center gap-2 border rounded-lg px-4 py-2 w-full"
+    >
+      <Calendar size={16} />
+      <span className="truncate">
+        {params.startDate && params.endDate
+          ? `${params.startDate} → ${params.endDate}`
+          : "Select Dates"}
+      </span>
+    </button>
+  </div>
+
+  <div className="sm:col-span-1 lg:col-span-2">
+    <button
+      onClick={handleExport}
+      className="flex items-center justify-center gap-2 bg-black text-white px-4 py-2 rounded-lg w-full"
+    >
+      <Download size={16} />
+      Export
+    </button>
+  </div>
+
+</div>
     </>
   );
 }
