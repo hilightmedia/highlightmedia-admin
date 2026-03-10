@@ -8,6 +8,7 @@ import Button from "../common/button";
 import Checkbox from "../common/checkBox";
 import GradientIconContainer from "../common/gradientIconContainer";
 import { Input } from "../common/input";
+import Link from "next/link";
 
 export default function Login() {
   const [showPassword, setShowPassword] = React.useState(false);
@@ -101,7 +102,7 @@ export default function Login() {
             />{" "}
             Remember me
           </span>
-          <p className="text-sm">Forgot Password?</p>
+          <Link className="text-sm" href="/auth/forgot-password" shallow>Forgot Password?</Link>
         </div>
         <Button
           type="submit"

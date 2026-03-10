@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "../../common/dialog";
 import Image from "next/image";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatBytes } from "@/src/lib/util";
 
 type UploadItemStatus = "queued" | "uploading" | "done" | "error" | "canceled";
@@ -42,8 +42,6 @@ const ALLOWED_MIME = new Set([
 
 const uid = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-
-
 const getVideoDuration = (file: File): Promise<number | null> =>
   new Promise((resolve) => {
     if (!file.type.startsWith("video/")) return resolve(null);
@@ -69,6 +67,7 @@ export default function UploadFile({
   maxFiles = 10,
   onUploaded,
 }: Props) {
+  const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -216,8 +215,16 @@ export default function UploadFile({
       }
     }
 
-    const anyDone = uploadedAll.length > 0 || items.some((x) => x.status === "done");
+    const anyDone =
+      uploadedAll.length > 0 ||
+      items.some((x) => x.status === "done") ||
+      items.some((x) => x.status === "uploading");
+
     if (anyDone) {
+      await queryClient.invalidateQueries({
+        queryKey: ["media", folderId],
+      });
+
       onUploaded?.(uploadedAll);
       setSuccessOpen(true);
     }
