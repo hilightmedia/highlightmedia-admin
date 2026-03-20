@@ -13,7 +13,7 @@ interface SelectPlaylistProps {
 const SelectPlaylist = ({ options, value, onChange }: SelectPlaylistProps) => {
   return (
     <Select
-      options={options}
+      options={[{ label: "Select Playlist", value: "" }, ...options]}
       value={value}
       onChange={(val: any) => onChange(Number(val))}
       className="px-5 py-0.5"

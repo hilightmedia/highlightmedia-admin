@@ -16,14 +16,14 @@ import Button from "../../common/button";
 import GradientIconContainer from "../../common/gradientIconContainer";
 import { Input } from "../../common/input";
 import { isEmpty } from "lodash";
-import Select from "../../common/select";
+import SelectPlaylist from "./selectPlaylist";
 
 export type PlayerEntity = {
   id: number;
   name: string;
   location: string;
   playlistId: number | null;
-  deviceKey?: string; 
+  deviceKey?: string;
 };
 
 type Props = {
@@ -56,7 +56,7 @@ export default function CreatePlayer({ open, onClose, player }: Props) {
   }, [open, player]);
 
   const isEdit = Boolean(activePlayer?.id);
-
+console.log(activePlayer,"asdsd")
   useEffect(() => {
     if (!open) return;
 
@@ -91,6 +91,7 @@ export default function CreatePlayer({ open, onClose, player }: Props) {
     queryFn: () =>
       axiosInstance.get("/playlist/list").then((res) => res.data.playlist),
   });
+
   const options = !isEmpty(playlist)
     ? playlist?.map((item: { id: number; name: string }) => ({
         label: item.name,
@@ -106,11 +107,11 @@ export default function CreatePlayer({ open, onClose, player }: Props) {
 
   const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
+console.log(formData)
     if (!formData.name?.trim()) return alert("Please enter a name");
     if (!formData.location?.trim()) return alert("Please enter a location");
-
-    if (formData.playlistId == null) return alert("Please select a playlist");
+    if (!formData.playlistId)
+      return alert("Please select a playlist");
 
     const dk = (formData.deviceKey ?? "").trim();
     if (dk.length < 8 || dk.length > 16)
@@ -118,7 +119,7 @@ export default function CreatePlayer({ open, onClose, player }: Props) {
 
     mutate();
   };
-
+console.log(formData,"ini")
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="max-w-[500px] w-[90%] rounded-xl p-6 gap-3 bg-white">
@@ -173,14 +174,14 @@ export default function CreatePlayer({ open, onClose, player }: Props) {
           <div className="inline-flex flex-col gap-2">
             <label className="font-medium text-sm">Playlist</label>
 
-            <Select
+            <SelectPlaylist
               options={options}
               value={formData.playlistId ?? ""}
-              onChange={(value: any) =>
+              onChange={(value) =>{
+                console.log(value,"sdsdds")
                 setFormData((p) => ({ ...p, playlistId: value }))
               }
-              className="px-5 py-0.5"
-              iconClassName="w-3 right-3"
+              }
             />
           </div>
 
@@ -197,7 +198,6 @@ export default function CreatePlayer({ open, onClose, player }: Props) {
                 setFormData((p) => ({ ...p, deviceKey: e.target.value }))
               }
             />
-            
           </div>
 
           <div className="flex gap-3">
