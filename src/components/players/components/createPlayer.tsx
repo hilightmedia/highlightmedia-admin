@@ -56,7 +56,7 @@ export default function CreatePlayer({ open, onClose, player }: Props) {
   }, [open, player]);
 
   const isEdit = Boolean(activePlayer?.id);
-console.log(activePlayer,"asdsd")
+
   useEffect(() => {
     if (!open) return;
 
@@ -107,7 +107,6 @@ console.log(activePlayer,"asdsd")
 
   const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-console.log(formData)
     if (!formData.name?.trim()) return alert("Please enter a name");
     if (!formData.location?.trim()) return alert("Please enter a location");
     if (!formData.playlistId)
@@ -119,7 +118,6 @@ console.log(formData)
 
     mutate();
   };
-console.log(formData,"ini")
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="max-w-[500px] w-[90%] rounded-xl p-6 gap-3 bg-white">
@@ -178,7 +176,6 @@ console.log(formData,"ini")
               options={options}
               value={formData.playlistId ?? ""}
               onChange={(value) =>{
-                console.log(value,"sdsdds")
                 setFormData((p) => ({ ...p, playlistId: value }))
               }
               }

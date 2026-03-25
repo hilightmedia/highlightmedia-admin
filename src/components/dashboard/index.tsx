@@ -129,7 +129,7 @@ const Dashboard = () => {
   const router = useRouter()
 
   return (
-    <div className="mx-auto w-full max-w-[1200px] p-4 overflow-x-hidden">
+    <div className="mx-auto w-full max-w-7xl p-4 overflow-x-hidden">
       <div className="mt-4 grid w-full min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="w-full min-w-0">
           <div className="grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -137,15 +137,18 @@ const Dashboard = () => {
               primary
               value={String(summaryRes?.totalFolders ?? 0)}
               label="Clients"
+              onClick={() => router.push("/media")}
             />
-            <StatCard value={String(summaryRes?.online ?? 0)} label="Online" />
+            <StatCard value={String(summaryRes?.online ?? 0)} label="Online" onClick={()=>router.push("/players?status=Online")} />
             <StatCard
               value={String(summaryRes?.offline ?? 0)}
               label="Offline"
+              onClick={()=>router.push("/players?status=Offline")}
             />
             <StatCard
               value={String(summaryRes?.players ?? 0)}
               label="Players"
+              onClick={()=>router.push("/players")}
             />
           </div>
           <div className="w-full xs:block lg:hidden mt-10">

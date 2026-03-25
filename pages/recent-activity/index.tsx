@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef } from "react";
 import GradientIconContainer from "@/src/components/common/gradientIconContainer";
 import SiteLayout from "@/src/components/layout/siteLayout";
 import axiosInstance from "@/src/helpers/axios";
@@ -8,6 +8,8 @@ import { formatTime } from "@/src/lib/util";
 import { ActivityApiItem } from "@/types/types";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { MonitorPlay } from "lucide-react";
+import { useInfiniteVirtualList } from "@/src/hooks/useInfiniteVirtualList";
+
 
 function ActivityItem({ text, time }: { text: string; time: string }) {
   return (
@@ -35,6 +37,8 @@ type ActivityResponse = {
 
 const RecentActivity = () => {
   const LIMIT = 15;
+  const ROW_HEIGHT = 88;
+  const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const {
     data,
@@ -50,7 +54,9 @@ const RecentActivity = () => {
         .get("/players/get-activity", { params: { offset: pageParam, limit: LIMIT } })
         .then((r) => r.data as ActivityResponse),
     getNextPageParam: (lastPage) =>
-      lastPage.pagination.hasMore ? lastPage.pagination.offset + lastPage.pagination.limit : undefined,
+      lastPage.pagination.hasMore
+        ? lastPage.pagination.offset + lastPage.pagination.limit
+        : undefined,
   });
 
   const items = useMemo(
@@ -58,51 +64,66 @@ const RecentActivity = () => {
     [data]
   );
 
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const virtualCount = items.length;
 
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el) return;
-
-    const io = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      },
-      { root: null, rootMargin: "200px", threshold: 0 }
-    );
-
-    io.observe(el);
-    return () => io.disconnect();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  const rowVirtualizer = useInfiniteVirtualList({
+    count: virtualCount,
+    scrollRef,
+    rowHeight: ROW_HEIGHT,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    overscan: 8,
+    threshold: 8,
+  });
 
   return (
     <SiteLayout>
-      <div className="mx-auto w-full max-w-[1240px] overflow-x-hidden xs:p-6 md:p-8">
+      <div
+        ref={scrollRef}
+        className="mx-auto h-screen w-full max-w-7xl overflow-y-auto overflow-x-hidden xs:p-6 md:p-8"
+      >
         <h1 className="mb-6 text-2xl font-semibold">Recent Activity</h1>
 
-        <div className="flex flex-col gap-6">
-          {isLoading ? (
+        {isLoading ? (
+          <div className="flex flex-col gap-6">
             <ActivityItem text="Loading..." time="" />
-          ) : items.length ? (
-            items.map((x) => (
-              <ActivityItem
-                key={x.id}
-                text={x.message.split("|")[0].trim()}
-                time={formatTime(x.at)}
-              />
-            ))
-          ) : (
-            <ActivityItem text="No recent activity" time="" />
-          )}
-        </div>
+          </div>
+        ) : items.length ? (
+          <div
+            className="relative w-full"
+            style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const item = items[virtualRow.index];
 
-        <div ref={sentinelRef} className="h-10" />
+              return (
+                <div
+                  key={item.id}
+                  className="absolute left-0 top-0 w-full"
+                  style={{
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <ActivityItem
+                    text={item.message.split("|")[0].trim()}
+                    time={formatTime(item.at)}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-6">
+            <ActivityItem text="No recent activity" time="" />
+          </div>
+        )}
 
         {isFetchingNextPage ? (
-          <div className="mt-6 text-sm font-semibold text-black/40">Loading more...</div>
+          <div className="mt-6 text-sm font-semibold text-black/40">
+            Loading more...
+          </div>
         ) : null}
       </div>
     </SiteLayout>

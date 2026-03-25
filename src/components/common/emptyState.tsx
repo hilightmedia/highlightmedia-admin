@@ -27,7 +27,7 @@ export default function EmptyState({
   return (
     <div
       className={cn(
-        "w-full  flex flex-col items-center justify-center gap-4 text-center",
+        "w-full flex flex-col items-center justify-center gap-4 text-center m-auto",
         className,
       )}
     >

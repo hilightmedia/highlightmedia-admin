@@ -270,7 +270,7 @@ const columns = useMemo(
   const showInitialLoading = isLoading && items.length === 0;
 
   return (
-    <section className="p-6 w-full flex flex-col gap-6 max-w-screen-xl mx-auto">
+    <section className="p-6 w-full flex flex-col gap-6 max-w-screen-xl mx-auto h-[calc(100vh-100px)]">
       {" "}
       <div className="flex flex-wrap items-center gap-4">
         {" "}

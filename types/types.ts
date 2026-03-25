@@ -291,3 +291,8 @@ export type PlayerLogsParams = {
   startDate?: string;
   endDate?: string;
 };
+
+export interface Size {
+  width: number;
+  height: number;
+}

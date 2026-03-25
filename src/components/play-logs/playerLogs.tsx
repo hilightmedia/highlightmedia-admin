@@ -171,7 +171,7 @@ export default function PlayerLogsPage() {
   const showEmpty = !isLoading && items.length === 0;
 
   return (
-    <section className="p-6 flex flex-col gap-6 max-w-screen-xl mx-auto">
+    <section className="p-6 flex flex-col gap-6 max-w-screen-xl mx-auto h-[calc(100vh-100px)]">
       <div className="text-sm text-black/50">
         Total Players - {items.length}
       </div>

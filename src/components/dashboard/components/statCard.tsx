@@ -5,10 +5,12 @@ export default function StatCard({
   value,
   label,
   primary,
+  onClick,  
 }: {
   value: string;
   label: string;
   primary?: boolean;
+  onClick: () => void;
 }) {
   return (
     <div
@@ -18,6 +20,7 @@ export default function StatCard({
           ? "border-none bg-[#ff6a00] text-white"
           : "bg-[#ffe4cf] text-black"
       )}
+      onClick={onClick}
     >
       <div className="text-xl font-extrabold leading-none">{value}</div>
       <div

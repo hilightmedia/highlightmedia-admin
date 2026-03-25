@@ -24,7 +24,7 @@ const TopNav = () => {
     const router = useRouter();
   return (
     <nav className="w-full h-16 bg-white shadow-custom-dark px-6 sticky top-0 z-50">
-      <div className="flex items-center justify-between xl:justify-end h-full w-full max-w-[1200px] mx-auto gap-6">
+      <div className="flex items-center justify-between xl:justify-end h-full w-full max-w-7xl mx-auto gap-6">
         {topMenu.map((item) => {
           return (
             <button key={item.name} className="hidden xl:inline-block ml-6 cursor-pointer" onClick={()=>router.push(item.path)}>

@@ -187,8 +187,6 @@ const PlaylistItem = () => {
   const getPlaylistFileId = (row: any) =>
     Number(row?.playlistFileId ?? row?.id);
 
-  console.log(editDurationOpen, "editDurationOpen");
-
   const columns = useMemo(
     () => [
       {
@@ -366,7 +364,7 @@ const PlaylistItem = () => {
   );
 
   return (
-    <section className="p-6 w-full flex flex-col gap-6 max-w-screen-xl mx-auto">
+    <section className="p-6 w-full flex flex-col gap-6 max-w-screen-xl mx-auto h-[calc(100vh-100px)]">
       <PlaylistFileActions
         playlistId={playListId}
         params={params}

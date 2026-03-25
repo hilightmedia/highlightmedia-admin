@@ -10,6 +10,8 @@ import { Input } from "../common/input";
 import { cn } from "@/src/lib/util";
 import Table, { TableColumn } from "../common/table";
 import Checkbox from "../common/checkBox";
+import { isEmpty } from "lodash";
+import EmptyState from "../common/emptyState";
 
 type TrashItem = {
   kind: "folder" | "file";
@@ -217,7 +219,7 @@ export default function Trash() {
   ];
 
   return (
-    <div className="p-6 w-full flex flex-col gap-6 max-w-screen-xl mx-auto">
+    <div className="p-6 w-full flex flex-col gap-6 max-w-screen-xl mx-auto h-[calc(100vh-100px)]">
       <div className="text-2xl font-semibold">Trash</div>
 
       <div className="flex md:flex-row flex-col md:items-center justify-between gap-4">
@@ -251,6 +253,8 @@ export default function Trash() {
 
       {isLoading ? (
         <div className="p-6 text-sm text-black/60">Loading...</div>
+      ) : isEmpty(items) ? (
+        <EmptyState image="/emptyFolder.svg" message="No items in trash." />
       ) : (
         <Table
           data={items}
