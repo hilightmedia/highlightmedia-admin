@@ -10,7 +10,6 @@ import {
   QueryObserverResult,
   RefetchOptions,
   useMutation,
-  useQueryClient,
 } from "@tanstack/react-query";
 import PlaylistFilesFiltersDialog from "./playlistFileFilters";
 import AddFilesToPlaylistDialog from "./addFile";
@@ -22,8 +21,7 @@ import { FilterIconOutlined } from "../../common/icon";
 import axiosInstance from "@/src/helpers/axios";
 import PopupConfirm from "../../common/popupConfirm";
 import BulkEditDurationDialog from "./bulkEditDuration";
-import { isEmpty, set } from "lodash";
-import { ref } from "node:process";
+import { isEmpty } from "lodash";
 
 interface Props {
   playlistId: number;

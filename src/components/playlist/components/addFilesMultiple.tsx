@@ -88,11 +88,6 @@ export default function BulkAddFilesToPlaylistsDialog({
     return files.filter((f) => f.name.toLowerCase().includes(s));
   }, [files, fileSearch]);
 
-  const fileById = React.useMemo(() => {
-    const m = new Map<number, FileRow>();
-    for (const f of files) m.set(f.id, f);
-    return m;
-  }, [files]);
 
   const allSelectedOnPage =
     filteredFiles.length > 0 && filteredFiles.every((f) => checkedFileIds.includes(f.id));
@@ -109,13 +104,6 @@ export default function BulkAddFilesToPlaylistsDialog({
     const n = typeof v === "string" ? Number(v) : typeof v === "number" ? v : NaN;
     const i = Math.floor(n);
     return Number.isFinite(i) && i > 0 ? i : null;
-  };
-
-  const getDurationForFile = (f?: FileRow | null) => {
-    if (!f) return defaultDurationSec;
-    const isVideo = String(f.fileType || "").toLowerCase().startsWith("video/");
-    if (!isVideo) return defaultDurationSec;
-    return toSafeInt(f.duration) ?? defaultDurationSec;
   };
 
   const { mutate: addFiles, isPending } = useMutation({

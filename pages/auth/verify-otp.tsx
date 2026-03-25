@@ -7,7 +7,6 @@ import GradientIconContainer from "@/src/components/common/gradientIconContainer
 import { Input } from "@/src/components/common/input";
 import LoginLayout from "@/src/components/layout/loginLayout";
 import axiosInstance from "@/src/helpers/axios";
-import { toast } from "react-toastify";
 
 export default function OtpVerification() {
   const router = useRouter();

@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/src/helpers/axios";
 import FolderActions from "./components/folderActions";
 import Table from "../common/table";
-import Image from "next/image";
 import { useRouter } from "next/router";
 import { useMemo, useState } from "react";
 import { FolderParams, Folders } from "@/types/types";
@@ -38,7 +37,7 @@ const Folder = () => {
     [params, debouncedSearch],
   );
 
-  const { data: folders, isFetching } = useQuery({
+  const { data: folders } = useQuery({
     queryKey: ["folders", queryParams],
     queryFn: () =>
       axiosInstance.get("/media/folders", { params: queryParams }).then((res) => res.data.media),

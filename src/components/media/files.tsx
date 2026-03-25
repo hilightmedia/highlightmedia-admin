@@ -2,7 +2,6 @@ import { Check, Folder, Pencil, Trash } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/src/helpers/axios";
 import Table from "../common/table";
-import Image from "next/image";
 import Checkbox from "../common/checkBox";
 import { useRouter } from "next/router";
 import { useState } from "react";

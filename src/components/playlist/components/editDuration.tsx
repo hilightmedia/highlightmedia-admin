@@ -1,4 +1,4 @@
-import React, { FormEvent, use, useEffect, useState } from "react";
+import React, { FormEvent,  useEffect, useState } from "react";
 import { FilePen, X } from "lucide-react";
 
 import axiosInstance from "@/src/helpers/axios";

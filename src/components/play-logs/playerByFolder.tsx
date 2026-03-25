@@ -41,33 +41,9 @@ const DeviceLogsSortOptions: Array<{ label: string; value: string }> = [
   { label: "Status (Offline first)", value: "status:asc" },
 ];
 
-const formatHours = (hours: number) => {
-  if (!Number.isFinite(hours)) return "-";
-  if (hours <= 0) return "0 Hours";
-  if (hours < 1) return `${Math.round(hours * 60)} Mins`;
-  const rounded = Math.round(hours * 10) / 10;
-  return `${rounded} Hours`;
-};
 
-const StatusPill = ({ status }: { status: "online" | "offline" }) => {
-  const isOnline = status === "online";
-  return (
-    <span
-      className={[
-        "inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold",
-        isOnline ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600",
-      ].join(" ")}
-    >
-      <span
-        className={[
-          "h-2 w-2 rounded-full",
-          isOnline ? "bg-green-600" : "bg-gray-400",
-        ].join(" ")}
-      />
-      {isOnline ? "Online" : "Offline"}{" "}
-    </span>
-  );
-};
+
+
 
 export default function PlayerByFolderIndex() {
   const LIMIT = 20;

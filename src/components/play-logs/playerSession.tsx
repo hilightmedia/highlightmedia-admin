@@ -20,28 +20,6 @@ const formatSeconds = (sec?: number) => {
   return `${h}h ${m}m ${s}s`;
 };
 
-const StatusPill = ({ status }: { status: "Online" | "Offline" }) => {
-  const isOnline = status === "Online";
-  return (
-    <span
-      className={[
-        "inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold",
-        isOnline
-          ? "bg-green-100 text-green-700"
-          : "bg-gray-100 text-gray-600",
-      ].join(" ")}
-    >
-      <span
-        className={[
-          "h-2 w-2 rounded-full",
-          isOnline ? "bg-green-600" : "bg-gray-400",
-        ].join(" ")}
-      />
-      {status}
-    </span>
-  );
-};
-
 type Response = {
   items: PlayerSessionItem[];
   pagination?: {

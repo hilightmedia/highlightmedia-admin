@@ -5,7 +5,6 @@ import { Pie } from "react-chartjs-2";
 import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "@/src/helpers/axios";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
-import { it } from "node:test";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
