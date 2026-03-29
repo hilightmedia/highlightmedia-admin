@@ -1,18 +1,35 @@
-import { topMenu,menu  } from "@/src/lib/constant";
-import { Bell, ChevronDown, Menu, X } from "lucide-react";
+import { topMenu, menu } from "@/src/lib/constant";
+import { clearStorage } from "@/src/lib/util";
+import { ChevronDown, LogOut, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const TopNav = () => {
-    const [mobileOpen, setMobileOpen] = useState(false);
-      const [openLogs, setOpenLogs] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [openLogs, setOpenLogs] = useState(false);
+  const [openProfile, setOpenProfile] = useState(false);
 
-    const { pathname } = useRouter();
-    useEffect(() => {
+  const router = useRouter();
+  const { pathname } = router;
+  const profileRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
-    const activeClass = (active: boolean) =>
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setOpenProfile(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const activeClass = (active: boolean) =>
     `flex items-center gap-3 px-3 py-2 rounded-lg transition ${
       active ? "bg-[#EA6535] text-white" : "text-gray-700 hover:bg-gray-100"
     }`;
@@ -21,36 +38,62 @@ const TopNav = () => {
     `text-sm font-medium transition ${
       active ? "text-[#EA6535]" : "text-gray-600 hover:text-gray-900"
     }`;
-    const router = useRouter();
+
+  const handleLogout = () => {
+    clearStorage();
+    router.push("/login");
+  };
+
   return (
     <nav className="w-full h-16 bg-white shadow-custom-dark px-6 sticky top-0 z-50">
       <div className="flex items-center justify-between xl:justify-end h-full w-full max-w-7xl mx-auto gap-6">
         {topMenu.map((item) => {
           return (
-            <button key={item.name} className="hidden xl:inline-block ml-6 cursor-pointer" onClick={()=>router.push(item.path)}>
+            <button
+              key={item.name}
+              className="hidden xl:inline-block ml-6 cursor-pointer"
+              onClick={() => router.push(item.path)}
+            >
               {item.name}
             </button>
           );
         })}
-        <button
-            className="xl:hidden inline-flex items-center justify-center"
-            onClick={() => setMobileOpen((p) => !p)}
-            aria-label="Open menu"
-          >
-            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
-        <span className="flex items-center gap-6">
-          <Bell size={20} className="cursor-pointer" />
 
-        <div className="inline-flex items-center gap-2 cursor-pointer font-medium">
-          <span className=" bg-[#8F8F8F] w-6 h-6 flex items-center text-white justify-center rounded-full">
-            H
-          </span>
-          <span className="hidden xl:inline-block">Hilight Media</span>
-          <ChevronDown className="hidden xl:inline-block" size={18} />
-        </div>
+        <button
+          className="xl:hidden inline-flex items-center justify-center"
+          onClick={() => setMobileOpen((p) => !p)}
+          aria-label="Open menu"
+        >
+          {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+
+        <span className="flex items-center gap-6">
+          <div ref={profileRef} className="relative">
+            <div
+              className="inline-flex items-center gap-2 cursor-pointer font-medium"
+              onClick={() => setOpenProfile((p) => !p)}
+            >
+              <span className=" bg-[#8F8F8F] w-6 h-6 flex items-center text-white justify-center rounded-full">
+                H
+              </span>
+              <span className="hidden xl:inline-block">Hilight Media</span>
+              <ChevronDown className="hidden xl:inline-block" size={18} />
+            </div>
+
+            {openProfile && (
+              <div className="absolute right-0 top-full mt-2 w-36 bg-white rounded-lg shadow-custom-dark z-50 overflow-hidden">
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 inline-flex items-center gap-2"
+                >
+                  Logout <LogOut size={18}/>
+                </button>
+              </div>
+            )}
+          </div>
         </span>
       </div>
+
       {mobileOpen && (
         <div className="xl:hidden fixed inset-0 z-50">
           <button
